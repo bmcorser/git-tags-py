@@ -10,10 +10,7 @@ ENTRY_POINTS = \
 setup(
     name='tags',
     version=VERSION,
-    packages=['tags', 'tags/git'],
-    install_requires=[
-        'click',
-        'six',
-    ],
+    packages=['tags'],
+    install_requires=['click'],
     entry_points=ENTRY_POINTS
 )
