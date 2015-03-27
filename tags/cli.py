@@ -13,8 +13,10 @@ def main(pkgs, alias, force):
     status = git.status()
     if bool(status) and not force:
         click.echo(status)
-        click.echo('Refusing to release with a dirty working tree. Please '
-                   'commit/reset your changes or override with --force')
+        click.secho('Refusing to release with untracked, unstaged or '
+                    'uncommitted files present (see above). Please '
+                    'commit/reset your changes or override with --force',
+                    fg='red', bold=True)
         exit(1)
     release = Release(git.get_head_sha1()[:7], alias, set(pkgs))
     release.validate_pkgs()
@@ -27,19 +29,26 @@ def main(pkgs, alias, force):
     try:
         map(functools.partial(git.create_tag, release_notes), release.tags)
     except git.TagError as err_tag:
-        click.echo("Error creating tag {0}".format(err_tag))
+        click.secho("Error creating tag {0}".format(err_tag), fg='red', bold=True)
         click.echo('Attempting to clean up ...')
         map(git.delete_tag, release.tags)
         click.echo('Bye.')
         exit(1)
+    click.echo('Release notes:')
+    for line in release_notes.split('\n'):
+        click.echo('  ' + line)
     if release.alias:
-        click.echo("Release alias: {0}".format(alias))
-        click.echo("Release name:  {0}".format(release.commit))
+        click.echo('Release alias:')
+        click.secho('  ' + alias, fg='green')
+        click.echo('Release name:')
+        click.secho('  ' + release.commit, fg='cyan')
     else:
-        click.echo("Release name: {0}".format(release.commit))
-    click.echo('Packages included in this release: ' + ' '.join(release.pkgs))
+        click.echo('Release name:')
+        click.secho('  ' + release.commit, fg='green')
+    click.echo('Packages included in this release:')
+    click.echo('  ' + ' '.join(release.pkgs))
     click.echo('Tags created:')
     for tag in release.tags:
-        click.echo('  ' + tag)
+        click.secho('  ' + tag, fg='yellow')
     git.push_tags()
     click.echo('Bye.')
