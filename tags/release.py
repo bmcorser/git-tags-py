@@ -13,7 +13,7 @@ class Release(object):
     def _tag(self, pkg):
         'Return the tag name for a package release'
         if self.alias:
-            return "releases/{0}/{1}/{2}".format(self.commit, self.alias, pkg)
+            return "releases/{0}/{1}/{2}".format(self.alias, self.commit, pkg)
         else:
             return "releases/{0}/{1}".format(self.commit, pkg)
 
