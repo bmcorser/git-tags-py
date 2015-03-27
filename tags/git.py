@@ -27,9 +27,10 @@ def get_tag_list():
 def create_tag(message, name):
     'Create a tag with the passed name and message (default user)'
     cmd = ['git', 'tag', '-a', name, '-m', message]
-    try:
-        subprocess.check_call(cmd)
-    except subprocess.CalledProcessError as e:
-        if 'already exists' not in str(e):
-            raise
+    subpr_pipe = subprocess.PIPE
+    proc = subprocess.Popen(cmd, stdout=subpr_pipe, stderr=subpr_pipe)
+    if proc.wait() > 0:
+        stdout, stderr = proc.communicate()
+        if 'already exists' not in stderr:
+            raise subprocess.CalledProcessError(proc.returncode, cmd, stderr)
         raise TagExists('That tag exists')

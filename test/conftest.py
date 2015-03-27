@@ -29,14 +29,14 @@ def create_temp_repo():
 
 
 @pytest.yield_fixture(scope='function')
-def function_repo(request, create_temp_repo):
+def function_repo():
     repo = create_temp_repo()
     yield repo
     shutil.rmtree(repo)
 
 
-@pytest.fixture(scope='session')
-def session_repo(request, create_temp_repo):
+@pytest.yield_fixture(scope='session')
+def session_repo():
     repo = create_temp_repo()
     yield repo
     shutil.rmtree(repo)
