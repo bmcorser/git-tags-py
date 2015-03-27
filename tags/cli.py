@@ -37,9 +37,7 @@ def main(pkgs, alias, force):
         click.echo("Release name:  {0}".format(release.commit))
     else:
         click.echo("Release name: {0}".format(release.commit))
-    click.echo('Packages included in this release:')
-    for pkg in release.pkgs:
-        click.echo('  ' + pkg)
+    click.echo('Packages included in this release: ' + ' '.join(release.pkgs))
     click.echo('Tags created:')
     for tag in release.tags:
         click.echo('  ' + tag)
