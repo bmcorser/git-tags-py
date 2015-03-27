@@ -4,7 +4,7 @@ VERSION = '0.0.1'
 ENTRY_POINTS = \
     '''
     [console_scripts]
-    git-tags=tags.cli:main
+    dg-release=tags.cli:main
     '''
 
 setup(

@@ -1,9 +1,10 @@
 import subprocess
+import click
 
 from . import utils
 
 
-class TagExists(Exception):
+class TagError(Exception):
     'Tell someone a tag exists'
     pass
 
@@ -27,13 +28,30 @@ def get_tag_list():
 def create_tag(message, name):
     'Create a tag with the passed name and message (default user)'
     cmd = ['git', 'tag', '-a', name, '-m', message]
-    subpr_pipe = subprocess.PIPE
-    proc = subprocess.Popen(cmd, stdout=subpr_pipe, stderr=subpr_pipe)
+    proc = subprocess.Popen(cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
     if proc.wait() > 0:
-        stdout, stderr = proc.communicate()
-        if 'unable to resolve ref' in stderr:
-            exit("There is a tag blocking the release {0}".format(name))
-        if 'still refs under' in stderr:
-            exit("Are you using a commit as an alias? ({0})".format(name))
-            raise subprocess.CalledProcessError(proc.returncode, stderr)
-        raise TagExists('That tag exists')
+        _, stderr = proc.communicate()
+        if 'unable to resolve ref' in stderr or 'still refs under' in stderr:
+            click.echo('Did you use a package name as an alias?')
+            raise TagError(name)
+        else:
+            raise TagError(name)
+
+
+def delete_tag(name):
+    '''
+    Try to delete the named tag, echo stderr if it fails for any other reason
+    save for the tag not existing.
+    '''
+    cmd = ['git', 'tag', '-d', name]
+    proc = subprocess.Popen(cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    if proc.wait() > 0:
+        _, stderr = proc.communicate()
+        if 'not found' in stderr:
+            pass
+        else:
+            click.echo(stderr)

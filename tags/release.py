@@ -35,9 +35,9 @@ class Release(object):
             if tag in existing_tags:
                 click.echo(fmt_warning.format(pkg, self.commit))
                 if not click.confirm('Do you want to continue?'):
-                    exit('Release cancelled.')
+                    exit('Release cancelled.', code=0)
             else:
                 chkd_tags.append(tag)
         if not chkd_tags:
-            exit('Nothing to release, cancelled.')
+            exit('Nothing to release, cancelled.', code=1)
         return chkd_tags
