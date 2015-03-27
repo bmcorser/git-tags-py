@@ -8,7 +8,14 @@ from . import utils
 @click.command()
 @click.argument('pkgs', nargs=-1)
 @click.option('--alias')
-def main(pkgs, alias):
+@click.option('--force', is_flag=True, default=False)
+def main(pkgs, alias, force):
+    status = git.status()
+    if bool(status) and not force:
+        click.echo(status)
+        click.echo('Refusing to release with a dirty working tree. Please '
+                   'commit/reset your changes or override with --force')
+        exit(1)
     release = Release(git.get_head_sha1()[:7], alias, set(pkgs))
     release.validate_pkgs()
     release.check_existing()

@@ -1,3 +1,5 @@
+import os
+import subprocess
 import pytest
 from tags import git
 
@@ -44,3 +46,31 @@ def test_push_tags(function_repo):
     assert git.list_tags() == []
     # the function below pulls tags from the remote
     assert git.get_tag_list() == ['a', 'b', 'c']
+
+
+def test_dirty_clean(function_repo):
+    'Dirty returns False when the repo is clean'
+    assert bool(git.status()) == False
+
+
+def test_dirty_untracked(function_repo):
+    'Dirty returns True when there are untracked files'
+    os.mknod('c')
+    assert bool(git.status()) == True
+
+
+def test_dirty_unstaged(function_repo):
+    'Dirty returns True when there are unstaged files'
+    os.mknod('c')
+    subprocess.check_call(['git', 'add', 'c'])
+    subprocess.check_call(['git', 'commit', '-m', 'abxc'])
+    with open('c', 'w') as c:
+        c.write('abc')
+    assert bool(git.status()) == True
+
+
+def test_dirty_uncommitted(function_repo):
+    'Dirty returns True when there are unstaged files'
+    os.mknod('c')
+    subprocess.check_call(['git', 'add', 'c'])
+    assert bool(git.status()) == True

@@ -80,3 +80,8 @@ def push_tags():
                    'pushed. You may be able to push the tags manually '
                    'with:\n\n'
                    '  git push --tags')
+
+def status():
+    'Return True if there are untracked, unstaged or uncommitted files present'
+    cmd = ['git', 'status', '--porcelain']
+    return subprocess.check_output(cmd)
