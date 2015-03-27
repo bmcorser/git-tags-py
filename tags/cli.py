@@ -21,6 +21,7 @@ def main(pkgs, alias):
         click.echo('Attempting to clean up ...')
         map(git.delete_tag, release.tags)
         exit(code=1)
+    git.push_tags()
     if release.alias:
         click.echo("Release alias: {0}".format(alias))
         click.echo("Release name:  {0}".format(release.commit))

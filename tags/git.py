@@ -15,14 +15,24 @@ def get_head_sha1():
     return utils.filter_empty_lines(subprocess.check_output(cmd))[0]
 
 
-def get_tag_list():
-    'Return all the tags in the repo'
+def fetch():
+    'Fetch tags and commits'
     fetch_cmd = ['git', 'fetch']
     subprocess.check_call(fetch_cmd)
     fetch_tags_cmd = ['git', 'fetch', '--tags']
     subprocess.check_call(fetch_tags_cmd)
+
+
+def list_tags():
+    'List local tags'
     list_tags_cmd = ['git', 'tag', '-l']
     return utils.filter_empty_lines(subprocess.check_output(list_tags_cmd))
+
+
+def get_tag_list():
+    'Fetch tags from remote abd list them'
+    fetch()
+    return list_tags()
 
 
 def create_tag(message, name):
@@ -55,3 +65,8 @@ def delete_tag(name):
             pass
         else:
             click.echo(stderr)
+
+
+def push_tags():
+    push_tags_cmd = ['git', 'push', '--tags']
+    subprocess.check_call(push_tags_cmd)

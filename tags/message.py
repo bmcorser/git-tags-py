@@ -8,6 +8,7 @@ import six
 import os
 from subprocess import call
 
+
 def capture_message():
     'Use the default editor to capture a message'
     editor = os.environ.get('EDITOR', 'vim')
