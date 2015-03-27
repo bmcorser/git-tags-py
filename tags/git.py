@@ -68,5 +68,15 @@ def delete_tag(name):
 
 
 def push_tags():
+    'Push local tags to the remote'
     push_tags_cmd = ['git', 'push', '--tags']
-    subprocess.check_call(push_tags_cmd)
+    proc = subprocess.Popen(push_tags_cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    if proc.wait() > 0:
+        _, stderr = proc.communicate()
+        click.echo("Error pushing release tags: {0}".format(stderr))
+        click.echo('This release will not be available until the tags are '
+                   'pushed. You may be able to push the tags manually '
+                   'with:\n\n'
+                   '  git push --tags')

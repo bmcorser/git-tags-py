@@ -1,5 +1,5 @@
+import os
 import click
-
 from . import git
 
 
@@ -22,6 +22,14 @@ class Release(object):
         'Return a list of strings for tags to be created for this release'
         return map(self._tag, self.pkgs)
 
+    def validate_pkgs(self):
+        'Validate all the packages we are releasing have a deploy script'
+        for pkg in self.pkgs:
+            if not os.path.isfile(os.path.join(pkg, 'deploy')):
+                click.echo("{0} is not a valid package".format(pkg))
+                click.echo('Bye.')
+                exit(1)
+
     def check_existing(self):
         '''
         Check if any of the packages in this release have been released
@@ -35,9 +43,13 @@ class Release(object):
             if tag in existing_tags:
                 click.echo(fmt_warning.format(pkg, self.commit))
                 if not click.confirm('Do you want to continue?'):
-                    exit('Release cancelled.', code=0)
+                    click.echo('Release cancelled.')
+                    click.echo('Bye.')
+                    exit(0)
             else:
                 chkd_tags.append(tag)
         if not chkd_tags:
-            exit('Nothing to release, cancelled.', code=1)
+            click.echo('Nothing to release, cancelled.')
+            click.echo('Bye.')
+            exit(1)
         return chkd_tags

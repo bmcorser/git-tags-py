@@ -41,5 +41,6 @@ def test_push_tags(function_repo):
     assert git.list_tags() == ['a', 'b', 'c']
     git.push_tags()
     map(git.delete_tag, 'abc')
+    assert git.list_tags() == []
     # the function below pulls tags from the remote
     assert git.get_tag_list() == ['a', 'b', 'c']
