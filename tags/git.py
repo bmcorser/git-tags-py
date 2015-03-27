@@ -31,6 +31,9 @@ def create_tag(message, name):
     proc = subprocess.Popen(cmd, stdout=subpr_pipe, stderr=subpr_pipe)
     if proc.wait() > 0:
         stdout, stderr = proc.communicate()
-        if 'already exists' not in stderr:
-            raise subprocess.CalledProcessError(proc.returncode, cmd, stderr)
+        if 'unable to resolve ref' in stderr:
+            exit("There is a tag blocking the release {0}".format(name))
+        if 'still refs under' in stderr:
+            exit("Are you using a commit as an alias? ({0})".format(name))
+            raise subprocess.CalledProcessError(proc.returncode, stderr)
         raise TagExists('That tag exists')
