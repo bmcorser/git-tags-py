@@ -24,6 +24,7 @@ class Release(object):
 
     def validate_pkgs(self):
         'Validate all the packages we are releasing have a deploy script'
+        return  # no validation for now
         for pkg in self.pkgs:
             if not os.path.isfile(os.path.join(pkg, 'deploy')):
                 click.echo("{0} is not a valid package".format(pkg))

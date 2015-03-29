@@ -7,9 +7,10 @@ from . import utils
 
 @click.command()
 @click.argument('pkgs', nargs=-1)
-@click.option('--alias')
+@click.option('--alias', '-a')
+@click.option('--release-notes', '-m', default=None)
 @click.option('--force', is_flag=True, default=False)
-def main(pkgs, alias, force):
+def main(pkgs, alias, release_notes, force):
     status = git.status()
     if bool(status) and not force:
         click.echo(status)
@@ -21,11 +22,12 @@ def main(pkgs, alias, force):
     release = Release(git.get_head_sha1()[:7], alias, set(pkgs))
     release.validate_pkgs()
     release.check_existing()
-    release_notes = message.capture_message()
-    if not utils.filter_empty_lines(release_notes):
-        click.echo('Release notes are required')
-        click.echo('Bye.')
-        exit(1)
+    if not release_notes:
+        release_notes = message.capture_message()
+        if not utils.filter_empty_lines(release_notes):
+            click.echo('Release notes are required')
+            click.echo('Bye.')
+            exit(1)
     try:
         map(functools.partial(git.create_tag, release_notes), release.tags)
     except git.TagError as err_tag:
