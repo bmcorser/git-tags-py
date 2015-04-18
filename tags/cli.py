@@ -16,7 +16,7 @@ def main(pkgs, alias, release_notes, force):
         click.echo()
         click.echo(status)
         explain = (
-            'Refusing to release with untracked (??), unstaged ( M) or '
+            'ERROR: Refusing to release with untracked (??), unstaged ( M) or '
             'uncommitted (A ) files present (see above). Please '
             'stash/commit/reset your changes or override with --force'
         )
@@ -31,14 +31,8 @@ def main(pkgs, alias, release_notes, force):
             click.echo('Release notes are required')
             click.echo('Bye.')
             exit(1)
-    try:
-        map(functools.partial(git.create_tag, release_notes), release.tags)
-    except git.TagError as err_tag:
-        click.secho("Error creating tag {0}".format(err_tag), fg='red', bold=True)
-        click.echo('Attempting to clean up ...')
-        map(git.delete_tag, release.tags)
-        click.echo('Bye.')
-        exit(1)
+    release.notes = release_notes
+    release.create_tags()
     click.echo('Release notes:')
     for line in release_notes.split('\n'):
         click.echo('  ' + line)
@@ -53,7 +47,8 @@ def main(pkgs, alias, release_notes, force):
     click.echo('Packages included in this release:')
     click.echo('  ' + ' '.join(release.pkgs))
     click.echo('Tags created:')
-    for tag in release.tags:
+    for tag in release.new_tags:
         click.secho('  ' + tag, fg='yellow')
-    git.push_tags()
+    if git.has_remote():
+        git.push_tags()
     click.echo('Bye.')

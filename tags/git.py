@@ -3,13 +3,20 @@ import click
 
 from . import utils
 
-
 FMT_TAG = "releases/{0}/{1}"
 FMT_TAG_ALIAS = "releases/{0}/{1}/{2}"
+
 
 class TagError(Exception):
     'Tell someone a tag exists'
     pass
+
+
+def has_remote():
+    'Test if repo has a remote defined'
+    remote_cmd = ['git', 'remote']
+    output = subprocess.check_output(remote_cmd)
+    return bool(utils.filter_empty_lines(output))
 
 
 def get_head_sha1(directory=None):
@@ -20,7 +27,7 @@ def get_head_sha1(directory=None):
     return utils.filter_empty_lines(subprocess.check_output(cmd))[0]
 
 
-def fmt_tag(self, pkg, commit, alias):
+def fmt_tag(pkg, commit, alias):
     'Return ref name for package, commit and optional alias'
     if alias:
         return FMT_TAG_ALIAS.format(alias, commit, pkg)
@@ -29,6 +36,8 @@ def fmt_tag(self, pkg, commit, alias):
 
 def fetch():
     'Fetch tags and commits'
+    if not has_remote():
+        return
     fetch_cmd = ['git', 'fetch']
     subprocess.check_call(fetch_cmd)
     fetch_tags_cmd = ['git', 'fetch', '--tags']
