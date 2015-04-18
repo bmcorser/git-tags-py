@@ -1,9 +1,19 @@
 import pytest
 
+import collections
 import os
 import tempfile
+import traceback
 import shutil
 import subprocess
+
+
+@pytest.fixture(scope='session')
+def utils():
+    utils_dict = {
+        'result_tb': lambda result: traceback.print_tb(result.exc_info[2])
+    }
+    return collections.namedtuple('utils', utils_dict.keys())(**utils_dict)
 
 
 def create_temp_repo():
