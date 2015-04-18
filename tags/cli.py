@@ -13,11 +13,14 @@ from . import utils
 def main(pkgs, alias, release_notes, force):
     status = git.status()
     if bool(status) and not force:
+        click.echo()
         click.echo(status)
-        click.secho('Refusing to release with untracked, unstaged or '
-                    'uncommitted files present (see above). Please '
-                    'commit/reset your changes or override with --force',
-                    fg='red', bold=True)
+        explain = (
+            'Refusing to release with untracked (??), unstaged ( M) or '
+            'uncommitted (A ) files present (see above). Please '
+            'stash/commit/reset your changes or override with --force'
+        )
+        click.secho(explain, fg='red', bold=True)
         exit(1)
     release = Release(git.get_head_sha1()[:7], alias, set(pkgs))
     release.validate_pkgs()

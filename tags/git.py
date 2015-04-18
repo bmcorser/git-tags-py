@@ -4,15 +4,27 @@ import click
 from . import utils
 
 
+FMT_TAG = "releases/{0}/{1}"
+FMT_TAG_ALIAS = "releases/{0}/{1}/{2}"
+
 class TagError(Exception):
     'Tell someone a tag exists'
     pass
 
 
-def get_head_sha1():
-    'Return the sha1 hash of the commit at HEAD'
-    cmd = ['git', 'rev-parse', 'HEAD']
+def get_head_sha1(directory=None):
+    'Return the sha1 hash of the commit at HEAD, optionally for a directory'
+    cmd = ['git', 'rev-list', '-1', 'HEAD']
+    if directory:
+        cmd.extend(['--', directory])
     return utils.filter_empty_lines(subprocess.check_output(cmd))[0]
+
+
+def fmt_tag(self, pkg, commit, alias):
+    'Return ref name for package, commit and optional alias'
+    if alias:
+        return FMT_TAG_ALIAS.format(alias, commit, pkg)
+    return FMT_TAG.format(commit, pkg)
 
 
 def fetch():
