@@ -43,10 +43,12 @@ class Release(object):
         if not self.alias:
             return self.tags
         alias_frag = "/{0}/".format(self.alias)
-        non_alias_tags = filter(lambda tag: alias_frag not in tag, self.tags)
+        non_alias_tags = set()
+        for tag in self.tags:
+            if alias_frag not in tag and tag not in self.existing_tags:
+                non_alias_tags.add(tag)
         alias_tags = set(filter(lambda tag: alias_frag in tag, self.tags))
-        non_existant = lambda tag: tag not in self.existing_tags
-        return set(filter(non_existant, non_alias_tags)) | alias_tags
+        return non_alias_tags | alias_tags
 
     def create_tags(self):
         'Create the required tags for this release'
