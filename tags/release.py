@@ -64,11 +64,27 @@ class Release(object):
                 click.echo('Bye.')
                 exit(os.EX_CANTCREAT)
 
+    def validate_alias(self):
+        'Validate the alias is not a package name'
+        known_pkgs = set()
+        for tag in self.existing_tags:
+            split_tag = tag.split('/')
+            if len(split_tag) == 3:
+                _, pkg, _, = split_tag
+                known_pkgs.add(pkg)
+        if self.alias in known_pkgs:
+            fmt_error = \
+                "ERROR: The supplied alias '{0}' is already a package name."
+            click.secho(fmt_error.format(self.alias), fg='red', bold=True)
+            click.echo('Bye.')
+            exit(os.EX_DATAERR)
+
     def validate_pkgs(self):
         'Validate all the packages we are releasing have a deploy script'
         for pkg in self.pkgs:
             if not os.path.isfile(os.path.join(pkg, 'deploy')):
-                click.echo("{0} is not a valid package".format(pkg))
+                click.secho("ERROR: {0} is not a valid package".format(pkg),
+                            fg='red', bold=True)
                 click.echo('Bye.')
                 exit(os.EX_DATAERR)
 

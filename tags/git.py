@@ -30,8 +30,8 @@ def get_head_sha1(directory=None):
 def fmt_tag(pkg, commit, alias):
     'Return ref name for package, commit and optional alias'
     if alias:
-        return FMT_TAG_ALIAS.format(alias, commit, pkg)
-    return FMT_TAG.format(commit, pkg)
+        return FMT_TAG_ALIAS.format(alias, pkg, commit)
+    return FMT_TAG.format(pkg, commit)
 
 
 def fetch():

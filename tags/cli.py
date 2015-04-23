@@ -1,9 +1,9 @@
-import functools
 import click
 from . import git
 from . import message
 from .release import Release
 from . import utils
+
 
 @click.command()
 @click.argument('pkgs', nargs=-1)
@@ -23,6 +23,7 @@ def main(pkgs, alias, release_notes, force):
         click.secho(explain, fg='red', bold=True)
         exit(1)
     release = Release(git.get_head_sha1()[:7], alias, set(pkgs))
+    release.validate_alias()
     release.validate_pkgs()
     release.check_existing()
     if not release_notes:

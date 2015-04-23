@@ -4,7 +4,7 @@ VERSION = '0.0.2'
 ENTRY_POINTS = \
     '''
     [console_scripts]
-    tag-release=tags.cli:main
+    tags=tags.cli:main
     '''
 
 setup(
