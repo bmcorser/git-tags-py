@@ -1,4 +1,3 @@
-import operator
 import subprocess
 import click
 
@@ -23,8 +22,10 @@ def has_remote():
 
 def head_abbrev(directory=None):
     '''
-    Return the abbreviated sha1 hash of the commit at HEAD, optionally for a
-    directory.
+    Return the unambiguous abbreviated sha1 hash of the commit at HEAD,
+    optionally for a directory.
+
+    Note: The abbreviated hash can be of variable length.
     '''
     cmd = ['git', 'rev-list', '-1', 'HEAD', '--abbrev-commit']
     if directory:

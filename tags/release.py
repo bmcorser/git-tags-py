@@ -6,6 +6,7 @@ from . import git
 
 
 class Release(object):
+    'Object to hold data for release validation and methods for tag creation'
 
     def __init__(self, commit, alias, pkgs):
         self._tags = []
@@ -15,6 +16,8 @@ class Release(object):
 
         self.commit = commit
         self.alias = alias
+        if '*' in pkgs:
+            pkgs = self._unreleased_packages()
         self.pkgs = pkgs
 
     @property
@@ -79,37 +82,56 @@ class Release(object):
             click.echo('Bye.')
             exit(os.EX_DATAERR)
 
+    def is_pkg(self, pkg):
+        'Return bool of whether passed directory name is a package'
+        return os.path.isfile(os.path.join(pkg, 'deploy'))
+
     def validate_pkgs(self):
         'Validate all the packages we are releasing have a deploy script'
         for pkg in self.pkgs:
-            if not os.path.isfile(os.path.join(pkg, 'deploy')):
+            if not self.is_pkg(pkg):
                 click.secho("ERROR: {0} is not a valid package".format(pkg),
                             fg='red', bold=True)
                 click.echo('Bye.')
                 exit(os.EX_DATAERR)
 
-    def check_existing(self):
+    def released(self, pkg):
+        'Return bool for existing release of package'
+        last_release = git.head_abbrev(pkg)
+        pkg_tag = git.fmt_tag(pkg, last_release, self.alias)
+        tag = git.fmt_tag(pkg, self.commit, self.alias)
+        return tag in self.existing_tags or pkg_tag in self.existing_tags
+
+    def validate_unreleased(self):
         '''
         Check if any of the packages in this release have been released
-        already.
+        already. Exit if they have.
         '''
         chkd_tags = []
         fmt_error = ('ERROR: The {0} package hasn’t changed since its last '
                      'release (at {1}).')
         for pkg in self.pkgs:
-            last_release = git.head_abbrev(pkg)
-            pkg_tag = git.fmt_tag(pkg, last_release, self.alias)
-            tag = git.fmt_tag(pkg, self.commit, self.alias)
-            if tag in self.existing_tags or pkg_tag in self.existing_tags:
+            if self.released(pkg):
                 click.secho(fmt_error.format(pkg, self.commit),
                             fg='red', bold=True)
                 click.echo('Release cancelled.')
                 click.echo('Bye.')
                 exit(os.EX_USAGE)
             else:
-                chkd_tags.append(tag)
+                chkd_tags.append(git.fmt_tag(pkg, self.commit, self.alias))
         if not chkd_tags:
             click.echo('Nothing to release, cancelled.')
             click.echo('Bye.')
             exit(os.EX_USAGE)
         return chkd_tags
+
+    def _unreleased_packages(self):
+        'Return a list of unreleased packages'
+        unreleased_pkgs = []
+        for pkg in filter(self.is_pkg, os.listdir('.')):
+            if not self.released(pkg):
+                unreleased_pkgs.append(pkg)
+        if not unreleased_pkgs:
+            click.echo('No packages have changed since last release')
+            exit(os.EX_DATAERR)
+        return unreleased_pkgs

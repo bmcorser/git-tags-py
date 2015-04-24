@@ -49,7 +49,7 @@ def release(pkgs, alias, release_notes, force, no_remote):
     release_inst = release_.Release(git.head_abbrev(), alias, set(pkgs))
     release_inst.validate_alias()
     # release_inst.validate_pkgs()
-    release_inst.check_existing()
+    release_inst.validate_unreleased()
     if not release_notes:
         release_notes = message.capture_message()
         if not utils.filter_empty_lines(release_notes):
@@ -108,6 +108,9 @@ def lookup(pkgs, alias, number):
     if alias:
         filter_ = git.FMT_TAG_ALIAS.format(alias=alias, pkg='*', commit='*')
         alias_tags = git.tag_refs(filter_)
+        if not alias_tags:
+            click.echo("Nothing released under alias {0}".format(alias))
+            exit(os.EX_DATAERR)
         if not pkgs:
             pkgs = set()
             for tag in alias_tags:
