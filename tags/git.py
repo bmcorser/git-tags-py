@@ -1,10 +1,12 @@
+import operator
 import subprocess
 import click
 
 from . import utils
 
-FMT_TAG = "releases/{0}/{1}"
-FMT_TAG_ALIAS = "releases/{0}/{1}/{2}"
+FMT_NS = 'releases/{release}'
+FMT_TAG = FMT_NS.format(release='{pkg}/{commit}')
+FMT_TAG_ALIAS = FMT_NS.format(release='{alias}/{pkg}/{commit}')
 
 
 class TagError(Exception):
@@ -30,8 +32,8 @@ def get_head_sha1(directory=None):
 def fmt_tag(pkg, commit, alias):
     'Return ref name for package, commit and optional alias'
     if alias:
-        return FMT_TAG_ALIAS.format(alias, pkg, commit)
-    return FMT_TAG.format(pkg, commit)
+        return FMT_TAG_ALIAS.format(alias=alias, pkg=pkg, commit=commit)
+    return FMT_TAG.format(pkg=pkg, commit=commit)
 
 
 def fetch():
@@ -106,3 +108,29 @@ def status():
     'Return True if there are untracked, unstaged or uncommitted files present'
     cmd = ['git', 'status', '--porcelain']
     return subprocess.check_output(cmd)
+
+
+def tag_refs(namespace):
+    'Return the short refs of tags in the passed namespace'
+    cmd = [
+        'git',
+        'for-each-ref',
+        '--format',
+        '%(refname:short)',
+        "refs/tags/{0}".format(namespace),
+    ]
+    return utils.filter_empty_lines(subprocess.check_output(cmd))
+
+
+def sort_refs(refs):
+    'Return sorted list of passed refs as abbreviated hashes, latest first'
+    cmd = ['git', 'rev-list', '--no-walk']
+    map(cmd.append, refs)
+    return map(operator.itemgetter(slice(7)),
+               utils.filter_empty_lines(subprocess.check_output(cmd)))
+
+
+def cat_file(ref):
+    'Call cat-file -p on the ref passed'
+    cmd = ['git', 'cat-file', '-p', ref]
+    return utils.filter_empty_lines(subprocess.check_output(cmd))
