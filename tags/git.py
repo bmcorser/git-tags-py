@@ -21,9 +21,12 @@ def has_remote():
     return bool(utils.filter_empty_lines(output))
 
 
-def get_head_sha1(directory=None):
-    'Return the sha1 hash of the commit at HEAD, optionally for a directory'
-    cmd = ['git', 'rev-list', '-1', 'HEAD']
+def head_abbrev(directory=None):
+    '''
+    Return the abbreviated sha1 hash of the commit at HEAD, optionally for a
+    directory.
+    '''
+    cmd = ['git', 'rev-list', '-1', 'HEAD', '--abbrev-commit']
     if directory:
         cmd.extend(['--', directory])
     return utils.filter_empty_lines(subprocess.check_output(cmd))[0]
@@ -92,6 +95,8 @@ def delete_tag(name):
 
 def push_tags():
     'Push local tags to the remote'
+    if not has_remote():
+        return
     push_tags_cmd = ['git', 'push', '--tags']
     proc = subprocess.Popen(push_tags_cmd,
                             stdout=subprocess.PIPE,
@@ -103,6 +108,7 @@ def push_tags():
                    'pushed. You may be able to push the tags manually '
                    'with:\n\n'
                    '  git push --tags')
+
 
 def status():
     'Return True if there are untracked, unstaged or uncommitted files present'
@@ -124,10 +130,11 @@ def tag_refs(namespace):
 
 def sort_refs(refs):
     'Return sorted list of passed refs as abbreviated hashes, latest first'
-    cmd = ['git', 'rev-list', '--no-walk']
+    cmd = ['git', 'rev-list', '--no-walk', '--abbrev-commit']
     map(cmd.append, refs)
-    return map(operator.itemgetter(slice(7)),
-               utils.filter_empty_lines(subprocess.check_output(cmd)))
+    get_commit = lambda ref: ref.split('/')[-1]
+    output = subprocess.check_output(cmd)
+    return map(get_commit, utils.filter_empty_lines(output))
 
 
 def cat_file(ref):

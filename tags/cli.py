@@ -30,8 +30,11 @@ def print_status(status):
 @click.option('--alias', '-a')
 @click.option('--release-notes', '-m', default=None)
 @click.option('--force', is_flag=True, default=False)
-def release(pkgs, alias, release_notes, force):
+@click.option('--no-remote', is_flag=True, default=False)
+def release(pkgs, alias, release_notes, force, no_remote):
     'Tag packages as released'
+    if no_remote:
+        git.has_remote = lambda: False
     status = git.status()
     if bool(status) and not force:
         click.echo()
@@ -43,9 +46,9 @@ def release(pkgs, alias, release_notes, force):
         )
         click.secho(explain, fg='red', bold=True)
         exit(os.EX_USAGE)
-    release_inst = release_.Release(git.get_head_sha1()[:7], alias, set(pkgs))
+    release_inst = release_.Release(git.head_abbrev(), alias, set(pkgs))
     release_inst.validate_alias()
-    release_inst.validate_pkgs()
+    # release_inst.validate_pkgs()
     release_inst.check_existing()
     if not release_notes:
         release_notes = message.capture_message()
@@ -71,8 +74,7 @@ def release(pkgs, alias, release_notes, force):
     click.echo('Tags created:')
     for tag in release_inst.new_tags:
         click.secho('  ' + tag, fg='yellow')
-    if git.has_remote():
-        git.push_tags()
+    git.push_tags()
     click.echo('Bye.')
 
 
@@ -95,6 +97,7 @@ def alias_lookup(alias, pkg):
     click.echo('Release notes:')
     for line in tag_message:
         click.echo('  ' + line)
+
 
 @main.command()
 @click.argument('pkgs', nargs=-1)
