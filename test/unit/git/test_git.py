@@ -108,3 +108,14 @@ def test_sort_refs(function_repo):
     refs = utils.filter_empty_lines(subprocess.check_output(cmd))
     shuffled_refs = random.sample(refs, len(refs))
     assert git.sort_refs(shuffled_refs) == refs
+
+
+@pytest.mark.parametrize('line,expected', (
+    ('tagger Three Part Name <a@b.com> 123 +0',
+     ('Three Part Name', '<a@b.com>', '123', '+0')),
+    ('tagger Twopart Name <a@b.com> 123 +0',
+     ('Twopart Name', '<a@b.com>', '123', '+0')),
+    ('tagger Onepartname <a@b.com> 123 +0',
+     ('Onepartname', '<a@b.com>', '123', '+0'))))
+def test_tagger_line_tokens(line, expected):
+    assert git.tagger_line_tokens(line.split(' ')) == expected

@@ -144,6 +144,30 @@ def cat_file(ref):
     return utils.filter_empty_lines(subprocess.check_output(cmd))
 
 
+def tagger_line_tokens(tokens):
+    'Return the tagger name, email, time and timezone for a tagger line'
+    for index, token in enumerate(tokens[1:]):
+        if '<' in token and '>' in token:
+            e_ix = index + 1  # email position
+            break
+    return (' '.join(tokens[1:e_ix]),) + tuple(tokens[e_ix:])
+
+
+def tag_dict(tag):
+    'Return the contents of a tag as a dictionary'
+    contents = cat_file(tag)
+    tagger, email, time, timezone = tagger_line_tokens(contents[3].split(' '))
+    tag_message = '\n'.join(contents[4:])
+    return {
+        'tag': tag,
+        'tagger_name': tagger,
+        'tagger_email': email.strip('<>'),
+        'time': time,
+        'timezone': timezone,
+        'message': tag_message
+    }
+
+
 def alias_pkgs(alias):
     'Return packages included in passed alias'
     pkgs = set()

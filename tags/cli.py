@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 import datetime
 import os
 import click
+import yaml
+
 from . import git
 from . import message
 from . import release as release_
@@ -100,11 +102,14 @@ def release(pkgs, alias, release_notes, force, no_remote, undo):
     click.echo('Bye.')
 
 
-def alias_lookup(alias, pkg):
+def alias_lookup(alias, pkg, yaml_out):
     filter_ = git.FMT_TAG_ALIAS.format(alias=alias, pkg=pkg, commit='*')
     pkg_tags = git.tag_refs(filter_)
     release_dict = {tag[-7:]: tag for tag in pkg_tags}
     name = git.sort_refs(release_dict.keys())[0]
+    if yaml_out:
+        print(yaml.dump(git.tag_dict(name), default_flow_style=False))
+        exit(os.EX_OK)
     tag_contents = git.cat_file((release_dict[name]))
     tagger_line = tag_contents[3].split(' ')
     tag_message = tag_contents[4:]
@@ -126,7 +131,8 @@ def alias_lookup(alias, pkg):
 @click.option('--alias', '-a', help='Packages released under alias')
 @click.option('--commit', '-c', help='Packages released at commit')
 @click.option('--number', '-n', default=1)
-def lookup(pkgs, alias, commit, number):
+@click.option('--yaml', '-y', 'yaml_out', is_flag=True, help='Output as YAML')
+def lookup(pkgs, alias, commit, number, yaml_out):
     'Get the latest release name(s)'
     if commit and pkgs:
         click.echo('Either packages or commit. Not both.')
@@ -152,7 +158,7 @@ def lookup(pkgs, alias, commit, number):
             for pkg in pkgs:
                 click.echo('  ' + pkg)
         for pkg in pkgs:
-            alias_lookup(alias, pkg)
+            alias_lookup(alias, pkg, yaml_out)
         exit(os.EX_OK)
     for pkg in pkgs:
         filter_ = git.FMT_TAG.format(pkg=pkg, commit='*')
