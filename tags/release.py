@@ -100,7 +100,8 @@ class Release(object):
         last_release = git.head_abbrev(pkg)
         pkg_tag = git.fmt_tag(pkg, last_release, self.alias)
         tag = git.fmt_tag(pkg, self.commit, self.alias)
-        return tag in self.existing_tags or pkg_tag in self.existing_tags
+        if tag in self.existing_tags or pkg_tag in self.existing_tags:
+            return last_release
 
     def validate_unreleased(self):
         '''
@@ -111,8 +112,9 @@ class Release(object):
         fmt_error = ('ERROR: The {0} package hasn’t changed since its last '
                      'release (at {1}).')
         for pkg in self.pkgs:
-            if self.released(pkg):
-                click.secho(fmt_error.format(pkg, self.commit),
+            released_as = self.released(pkg)
+            if released_as:
+                click.secho(fmt_error.format(pkg, released_as),
                             fg='red', bold=True)
                 click.echo('Release cancelled.')
                 click.echo('Bye.')

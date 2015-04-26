@@ -142,3 +142,13 @@ def cat_file(ref):
     'Call cat-file -p on the ref passed'
     cmd = ['git', 'cat-file', '-p', ref]
     return utils.filter_empty_lines(subprocess.check_output(cmd))
+
+
+def alias_pkgs(alias):
+    'Return packages included in passed alias'
+    pkgs = set()
+    alias_filter = FMT_TAG_ALIAS.format(alias=alias, pkg='**', commit='*')
+    for tag in tag_refs(alias_filter):
+        _, _, pkg, _ = tag.split('/')
+        pkgs.add(pkg)
+    return pkgs

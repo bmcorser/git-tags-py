@@ -1,3 +1,6 @@
+# coding: utf-8
+from __future__ import unicode_literals
+
 import datetime
 import os
 import click
@@ -27,12 +30,31 @@ def print_status(status):
 
 @main.command()
 @click.argument('pkgs', nargs=-1)
-@click.option('--alias', '-a')
-@click.option('--release-notes', '-m', default=None)
-@click.option('--force', is_flag=True, default=False)
-@click.option('--no-remote', is_flag=True, default=False)
-def release(pkgs, alias, release_notes, force, no_remote):
-    'Tag packages as released'
+@click.option('--alias', '-a', help='Release packages under an alias')
+@click.option('--release-notes', '-m', default=None,
+              help='Tell others what this release is. If this option is not '
+                   'supplied on the command line, $EDITOR will be used to '
+                   'gather release notes')
+@click.option('--force', is_flag=True, default=False,
+              help='Ignore dirty repo warnings')
+@click.option('--no-remote', is_flag=True, default=False,
+              help='DEBUG: Don’t publish tags now')
+@click.option('--undo', is_flag=True, default=False,
+              help='DEBUG: Delete tags for specified release')
+def release(pkgs, alias, release_notes, force, no_remote, undo):
+    '''
+    Cut a new release. Like a boss.
+
+    EXAMPLES:
+
+    Release some packages:
+
+        tag release pkg-a pkg-b
+
+    Release packages under an alias:
+
+        tag release pkg-x pkg-y pkg-z --alias=alphabet-end
+    '''
     if no_remote:
         git.has_remote = lambda: False
     status = git.status()
@@ -55,7 +77,7 @@ def release(pkgs, alias, release_notes, force, no_remote):
         if not utils.filter_empty_lines(release_notes):
             click.echo('Release notes are required')
             click.echo('Bye.')
-            exit(1)
+            exit(os.EX_NOINPUT)
     release_inst.notes = release_notes
     release_inst.create_tags()
     click.echo('Release notes:')
@@ -64,13 +86,13 @@ def release(pkgs, alias, release_notes, force, no_remote):
     if release_inst.alias:
         click.echo('Release alias:')
         click.secho('  ' + alias, fg='green')
-        click.echo('Release name:')
-        click.secho('  ' + release_inst.commit, fg='cyan')
+        click.echo('Packages in this alias:')
+        click.echo('  ' + ' '.join(git.alias_pkgs(release_inst.alias)))
     else:
         click.echo('Release name:')
         click.secho('  ' + release_inst.commit, fg='green')
-    click.echo('Packages included in this release:')
-    click.echo('  ' + ' '.join(release_inst.pkgs))
+        click.echo('Packages included in this release:')
+        click.echo('  ' + ' '.join(release_inst.pkgs))
     click.echo('Tags created:')
     for tag in release_inst.new_tags:
         click.secho('  ' + tag, fg='yellow')
@@ -101,10 +123,20 @@ def alias_lookup(alias, pkg):
 
 @main.command()
 @click.argument('pkgs', nargs=-1)
-@click.option('--alias', '-a')
-@click.option('--number', '-n', default=3)
-def lookup(pkgs, alias, number):
+@click.option('--alias', '-a', help='Packages released under alias')
+@click.option('--commit', '-c', help='Packages released at commit')
+@click.option('--number', '-n', default=1)
+def lookup(pkgs, alias, commit, number):
     'Get the latest release name(s)'
+    if commit and pkgs:
+        click.echo('Either packages or commit. Not both.')
+        exit(os.EX_USAGE)
+    if commit:
+        filter_ = git.FMT_TAG_ALIAS.format(alias='**', pkg='**', commit=commit)
+        commit_tags = git.tag_refs(filter_)
+        if not commit_tags:
+            click.echo("Nothing released at {0}".format(commit))
+            exit(os.EX_DATAERR)
     if alias:
         filter_ = git.FMT_TAG_ALIAS.format(alias=alias, pkg='*', commit='*')
         alias_tags = git.tag_refs(filter_)
