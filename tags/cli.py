@@ -121,6 +121,9 @@ def release(pkgs, alias, release_notes, force, no_remote, undo):
 def print_releases(releases, yaml_out):
     if yaml_out:
         click.echo(yaml.dump(releases, default_flow_style=False))
+        exit(os.EX_OK)
+    click.echo('User printing is not yet implemented, try with --yaml')
+    exit(os.EX_UNAVAILABLE)
 
 
 @main.command(name='lookup')
@@ -138,9 +141,11 @@ def lookup_cli(pkgs, alias, commit, number, yaml_out):
     if alias and pkgs:
         click.echo('Either packages or alias. Not both.')
         exit(os.EX_USAGE)
+    '''
     if commit and number:
         click.echo('Only one release will exist for any given commit.')
         exit(os.EX_USAGE)
+    '''
     if commit:
         commit_releases = lookup.commit(commit, _alias=alias)
         if not commit_releases:
