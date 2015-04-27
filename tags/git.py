@@ -8,6 +8,13 @@ FMT_TAG = FMT_NS.format(release='{pkg}/{commit}')
 FMT_TAG_ALIAS = FMT_NS.format(release='{alias}/{pkg}/{commit}')
 
 
+def fmt_tag(pkg, commit, alias):
+    'Return ref name for package, commit and optional alias'
+    if alias:
+        return FMT_TAG_ALIAS.format(alias=alias, pkg=pkg, commit=commit)
+    return FMT_TAG.format(pkg=pkg, commit=commit)
+
+
 class TagError(Exception):
     'Tell someone a tag exists'
     pass
@@ -31,13 +38,6 @@ def head_abbrev(directory=None):
     if directory:
         cmd.extend(['--', directory])
     return utils.filter_empty_lines(subprocess.check_output(cmd))[0]
-
-
-def fmt_tag(pkg, commit, alias):
-    'Return ref name for package, commit and optional alias'
-    if alias:
-        return FMT_TAG_ALIAS.format(alias=alias, pkg=pkg, commit=commit)
-    return FMT_TAG.format(pkg=pkg, commit=commit)
 
 
 def fetch():
@@ -133,9 +133,7 @@ def sort_refs(refs):
     'Return sorted list of passed refs as abbreviated hashes, latest first'
     cmd = ['git', 'rev-list', '--no-walk', '--abbrev-commit']
     map(cmd.append, refs)
-    get_commit = lambda ref: ref.split('/')[-1]
-    output = subprocess.check_output(cmd)
-    return map(get_commit, utils.filter_empty_lines(output))
+    return utils.filter_empty_lines(subprocess.check_output(cmd))
 
 
 def cat_file(ref):
@@ -166,13 +164,3 @@ def tag_dict(tag):
         'timezone': timezone,
         'message': tag_message
     }
-
-
-def alias_pkgs(alias):
-    'Return packages included in passed alias'
-    pkgs = set()
-    alias_filter = FMT_TAG_ALIAS.format(alias=alias, pkg='**', commit='*')
-    for tag in tag_refs(alias_filter):
-        _, _, pkg, _ = tag.split('/')
-        pkgs.add(pkg)
-    return pkgs
