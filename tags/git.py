@@ -1,4 +1,6 @@
+import logging
 import subprocess
+
 import click
 
 from . import utils
@@ -6,6 +8,13 @@ from . import utils
 FMT_NS = 'releases/{release}'
 FMT_TAG = FMT_NS.format(release='{pkg}/{commit}')
 FMT_TAG_ALIAS = FMT_NS.format(release='{alias}/{pkg}/{commit}')
+
+LOGGER = logging.getLogger(__name__)
+
+
+def log_cmd(cmd):
+    'Log the invocation of a command'
+    LOGGER.debug("Invoking {cmd}".format(cmd=' '.join(cmd)))
 
 
 def fmt_tag(pkg, commit, alias):
@@ -23,6 +32,7 @@ class TagError(Exception):
 def has_remote():
     'Test if repo has a remote defined'
     remote_cmd = ['git', 'remote']
+    log_cmd(remote_cmd)
     output = subprocess.check_output(remote_cmd)
     return bool(utils.filter_empty_lines(output))
 
@@ -35,6 +45,7 @@ def head_abbrev(directory=None):
     Note: The abbreviated hash can be of variable length.
     '''
     cmd = ['git', 'rev-list', '-1', 'HEAD', '--abbrev-commit']
+    log_cmd(cmd)
     if directory:
         cmd.extend(['--', directory])
     return utils.filter_empty_lines(subprocess.check_output(cmd))[0]
@@ -45,14 +56,17 @@ def fetch():
     if not has_remote():
         return
     fetch_cmd = ['git', 'fetch']
+    log_cmd(fetch_cmd)
     subprocess.check_call(fetch_cmd)
     fetch_tags_cmd = ['git', 'fetch', '--tags']
+    log_cmd(fetch_tags_cmd)
     subprocess.check_call(fetch_tags_cmd)
 
 
 def list_tags():
     'List local tags'
     list_tags_cmd = ['git', 'tag', '-l']
+    log_cmd(list_tags_cmd)
     return utils.filter_empty_lines(subprocess.check_output(list_tags_cmd))
 
 
@@ -65,6 +79,7 @@ def get_tag_list():
 def create_tag(message, name):
     'Create a tag with the passed name and message (default user)'
     cmd = ['git', 'tag', '-a', name, '-m', message]
+    log_cmd(cmd)
     proc = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
@@ -83,6 +98,7 @@ def delete_tag(name):
     save for the tag not existing.
     '''
     cmd = ['git', 'tag', '-d', name]
+    log_cmd(cmd)
     proc = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
@@ -99,6 +115,7 @@ def push_tags():
     if not has_remote():
         return
     push_tags_cmd = ['git', 'push', '--tags']
+    log_cmd(push_tags_cmd)
     proc = subprocess.Popen(push_tags_cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
@@ -114,6 +131,7 @@ def push_tags():
 def status():
     'Return True if there are untracked, unstaged or uncommitted files present'
     cmd = ['git', 'status', '--porcelain']
+    log_cmd(cmd)
     return subprocess.check_output(cmd)
 
 
@@ -126,12 +144,14 @@ def tag_refs(namespace):
         '%(refname:short)',
         "refs/tags/{0}".format(namespace),
     ]
+    log_cmd(cmd)
     return utils.filter_empty_lines(subprocess.check_output(cmd))
 
 
 def sort_refs(refs):
     'Return sorted list of passed refs as abbreviated hashes, latest first'
     cmd = ['git', 'rev-list', '--no-walk', '--abbrev-commit']
+    log_cmd(cmd)
     map(cmd.append, refs)
     return utils.filter_empty_lines(subprocess.check_output(cmd))
 
@@ -139,6 +159,7 @@ def sort_refs(refs):
 def cat_file(ref):
     'Call cat-file -p on the ref passed'
     cmd = ['git', 'cat-file', '-p', ref]
+    log_cmd(cmd)
     return utils.filter_empty_lines(subprocess.check_output(cmd))
 
 

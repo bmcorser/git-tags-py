@@ -1,8 +1,9 @@
 # coding: utf-8
 from __future__ import unicode_literals
 
-import datetime
 import os
+import logging
+
 import click
 import yaml
 
@@ -15,8 +16,11 @@ from . import lookup
 STATUS_COLOUR = {' M': 'red', 'A ': 'green', '??': 'cyan'}
 
 
-@click.group()
-def main():
+@click.group(invoke_without_command=True)
+@click.option('--loglevel', '-l', default='NOTSET',
+              help='DEBUG: Set logging level (')
+def main(loglevel):
+    logging.basicConfig(level=getattr(logging, loglevel.upper()))
     ('Tools for creating and searching git tags\n'
      '\n'
      'Get help on commands with:\n'
