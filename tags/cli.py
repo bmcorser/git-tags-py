@@ -13,11 +13,11 @@ from . import release as release_
 from . import utils
 from . import lookup
 
-STATUS_COLOUR = {' M': 'red', 'A ': 'green', '??': 'cyan'}
+STATUS_COLOUR = {' M': 'red', ' D': 'red', 'A ': 'green', '??': 'cyan'}
 
 
 @click.group(invoke_without_command=True)
-@click.option('--loglevel', '-l', default='NOTSET',
+@click.option('--loglevel', '-l', default='WARN',
               help='DEBUG: Set logging level (')
 def main(loglevel):
     logging.basicConfig(level=getattr(logging, loglevel.upper()))
@@ -30,6 +30,7 @@ def main(loglevel):
 
 def print_status(status):
     'Print porcelain output colourfully'
+    click.echo('  ##')
     for line in utils.filter_empty_lines(status):
         click.secho('  ' + line, fg=STATUS_COLOUR[line[:2]])
     click.echo()
