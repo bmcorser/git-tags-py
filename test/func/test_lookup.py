@@ -6,7 +6,7 @@ import os
 import subprocess
 
 
-def test_cli_lookup(monkeypatch, function_repo):
+def test_cli_lookup_yaml(monkeypatch, function_repo):
     'Can lookup the latest a package release by name'
     monkeypatch.setattr(tags.message, 'capture_message', lambda: 'User message')
     map(function_repo.commit, ('a', 'b'))
@@ -16,5 +16,5 @@ def test_cli_lookup(monkeypatch, function_repo):
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()[:7]
     # release package 'b'
     print(runner.invoke(tags.cli.main, ['release','b']).output)
-    result = runner.invoke(tags.cli.main, ['lookup', 'b'])
+    result = runner.invoke(tags.cli.main, ['lookup', 'b', '--yaml'])
     assert commit in result.output

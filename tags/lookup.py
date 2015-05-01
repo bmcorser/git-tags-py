@@ -12,7 +12,7 @@ def sort_releases(releases):
     sorted_commits = git.sort_refs(commit_releases.keys())
     sorted_tags = []
     for commit_ in sorted_commits:
-        sorted_tags.extend(commit_releases.get(commit_))
+        sorted_tags.extend(sorted(commit_releases.get(commit_)))
     return sorted_tags
 
 

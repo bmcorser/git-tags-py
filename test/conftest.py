@@ -26,8 +26,8 @@ def create_temp_repo():
     os.chdir('remote_repo')
     subprocess.check_call(['git', 'init'])
     global time
-    time = 1329828782
-    def new_time():
+    time = 1329000000
+    def inc_time():
         global time
         time += 100
         os.environ['GIT_COMMITTER_DATE'] = "{0} +0000".format(time)
@@ -46,14 +46,14 @@ def create_temp_repo():
                 raise
         touch(path)
         subprocess.check_call(['git', 'add', name])
-        new_time()
+        inc_time()
         commit_return = subprocess.check_output(['git', 'commit', '-m', name])
         return commit_return.split(' ')[1].strip(']'), copy.copy(time)
     def packages(*names):
         return [commit(name) for name in names]
     os.mknod('init')
     subprocess.check_call(['git', 'add', '.'])
-    new_time()
+    inc_time()
     subprocess.check_call(['git', 'commit', '-m', 'Initial commit'])
     '''subprocess.check_call(['git', 'tag', '-a', 'a', '-m', 'Tag a'])'''
     os.chdir(repo_dir)
@@ -74,6 +74,7 @@ def create_temp_repo():
         'touch': touch,
         'dir': repo_dir,
         'cleanup': cleanup,
+        'inc_time': inc_time,
     }
     return collections.namedtuple('repo', repo_dict.keys())(**repo_dict)
 
