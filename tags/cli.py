@@ -49,7 +49,10 @@ def print_status(status):
               help='DEBUG: Don’t publish tags now')
 @click.option('--undo', is_flag=True, default=False,
               help='DEBUG: Delete tags for specified release')
-def release(pkgs, alias, release_notes, force, no_remote, undo):
+@click.option('--repo',
+              help='Specify repository, defaults to the repo closest to '
+                   '$(cwd)')
+def release(pkgs, alias, release_notes, force, no_remote, undo, repo):
     '''
     Cut a new release. Like a boss.
 
@@ -65,6 +68,9 @@ def release(pkgs, alias, release_notes, force, no_remote, undo):
     '''
     if no_remote:
         git.has_remote = lambda: False
+    if repo:
+        # todo: validate repo
+        os.chdir(repo)
     status = git.status()
     if bool(status) and not force:
         click.echo()
