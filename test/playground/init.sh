@@ -26,5 +26,3 @@ done;
 
 git add .
 git commit -m a
-
-tag release a b c d -m a
