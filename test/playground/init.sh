@@ -1,11 +1,13 @@
 #! /bin/bash
 
+set -e
 root=$(pwd)
 repos="${root}/repos"
 local_repo="${repos}/local"
 remote_repo="${repos}/remote"
+mkdir ${repos}
+
 init_repo () {
-    set -e
     repo_dir=$1
     mkdir -p ${repo_dir}
     cd ${repo_dir}

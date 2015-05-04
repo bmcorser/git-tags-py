@@ -69,13 +69,13 @@ def test_dirty_clean(function_repo):
 
 def test_dirty_untracked(function_repo):
     'Dirty returns True when there are untracked files'
-    os.mknod('c')
+    function_repo.touch('c')
     assert bool(git.status()) == True
 
 
 def test_dirty_unstaged(function_repo):
     'Dirty returns True when there are unstaged files'
-    os.mknod('c')
+    function_repo.touch('c')
     subprocess.check_call(['git', 'add', 'c'])
     subprocess.check_call(['git', 'commit', '-m', 'abxc'])
     with open('c', 'w') as c:
@@ -85,7 +85,7 @@ def test_dirty_unstaged(function_repo):
 
 def test_dirty_uncommitted(function_repo):
     'Dirty returns True when there are unstaged files'
-    os.mknod('c')
+    function_repo.touch('c')
     subprocess.check_call(['git', 'add', 'c'])
     assert bool(git.status()) == True
 

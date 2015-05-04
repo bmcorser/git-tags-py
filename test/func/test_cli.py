@@ -3,10 +3,9 @@ from click.testing import CliRunner
 import tags
 
 
-def test_cli_basic(monkeypatch, function_repo):
+def test_cli_basic(function_repo):
     'The CLI runs'
     function_repo.packages('a', 'b')
-    monkeypatch.setattr(tags.notes, 'capture_message', lambda: 'User message')
     runner = CliRunner()
-    result = runner.invoke(tags.cli.main, ['release', 'a', 'b'])
+    result = runner.invoke(tags.cli.main, ['release', 'a', 'b', '-m', 'a'])
     assert result.exit_code == 0

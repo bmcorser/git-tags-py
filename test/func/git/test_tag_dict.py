@@ -6,7 +6,7 @@ from click.testing import CliRunner
 import tags
 
 
-def test_git_tag_dict(monkeypatch, function_repo):
+def test_git_tag_dict(function_repo):
     'Can parse the return of cat-file into a dictionary'
     commit, time = function_repo.packages('pkg-a')[0]
     user_message = '''\
@@ -16,9 +16,8 @@ Things that happened:
     - This
     - That
     - The other'''
-    monkeypatch.setattr(tags.notes, 'capture_message', lambda: user_message)
     runner = CliRunner()
-    runner.invoke(tags.cli.main, ['release', 'pkg-a', '-a', 'test-alias'])
+    runner.invoke(tags.cli.main, ['release', 'pkg-a', '-a', 'test-alias', '-m', user_message])
     tag = tags.git.tag_refs('releases/test-alias/pkg-a')[0]
     _, _, _, commit = tag.split('/')
     expected = {

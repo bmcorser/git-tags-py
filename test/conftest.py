@@ -40,7 +40,6 @@ def create_temp_repo():
         path = os.path.join(name, 'deploy')
         try:
             os.mkdir(name)
-            os.mknod(path)
         except OSError as exc:
             if exc.errno != 17:
                 raise
@@ -51,7 +50,7 @@ def create_temp_repo():
         return commit_return.split(' ')[1].strip(']'), copy.copy(time)
     def packages(*names):
         return [commit(name) for name in names]
-    os.mknod('init')
+    touch('init')
     subprocess.check_call(['git', 'add', '.'])
     inc_time()
     subprocess.check_call(['git', 'commit', '-m', 'Initial commit'])
