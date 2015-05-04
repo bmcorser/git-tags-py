@@ -9,7 +9,7 @@ import tags
 def test_cli_rerelease(monkeypatch, function_repo):
     'Rereleasing a package returns proper exit code and message'
     function_repo.packages('a')
-    monkeypatch.setattr(tags.message, 'capture_message', lambda: 'User message')
+    monkeypatch.setattr(tags.notes, 'capture_message', lambda: 'User message')
     runner = CliRunner()
     runner.invoke(tags.cli.main, ['release', 'a'])
     result = runner.invoke(tags.cli.main, ['release', 'a'])
@@ -20,7 +20,7 @@ def test_cli_rerelease(monkeypatch, function_repo):
 def test_cli_rerelease_alias(monkeypatch, function_repo):
     'Releasing a package under an alias is OK'
     function_repo.packages('a')
-    monkeypatch.setattr(tags.message, 'capture_message', lambda: 'User message')
+    monkeypatch.setattr(tags.notes, 'capture_message', lambda: 'User message')
     runner = CliRunner()
     runner.invoke(tags.cli.main, ['release', 'a'])
     release_alias = 'alias'
@@ -32,7 +32,7 @@ def test_cli_rerelease_alias(monkeypatch, function_repo):
 def test_cli_rerelease_same_alias(monkeypatch, function_repo):
     'Rereleasing under the same alias is not OK'
     function_repo.packages('a')
-    monkeypatch.setattr(tags.message, 'capture_message', lambda: 'User message')
+    monkeypatch.setattr(tags.notes, 'capture_message', lambda: 'User message')
     runner = CliRunner()
     runner.invoke(tags.cli.main, ['release', 'a']).output
     release_alias = 'release-alias'
@@ -45,7 +45,7 @@ def test_cli_rerelease_same_alias(monkeypatch, function_repo):
 def test_cli_rerelease_alias_pkg(monkeypatch, function_repo):
     'Adding a package to an alias is fine'
     function_repo.packages('a', 'b')
-    monkeypatch.setattr(tags.message, 'capture_message', lambda: 'User message')
+    monkeypatch.setattr(tags.notes, 'capture_message', lambda: 'User message')
     runner = CliRunner()
     runner.invoke(tags.cli.main, ['release', 'a']).output
     release_alias = 'release-alias'

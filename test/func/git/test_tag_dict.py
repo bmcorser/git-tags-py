@@ -16,7 +16,7 @@ Things that happened:
     - This
     - That
     - The other'''
-    monkeypatch.setattr(tags.message, 'capture_message', lambda: user_message)
+    monkeypatch.setattr(tags.notes, 'capture_message', lambda: user_message)
     runner = CliRunner()
     runner.invoke(tags.cli.main, ['release', 'pkg-a', '-a', 'test-alias'])
     tag = tags.git.tag_refs('releases/test-alias/pkg-a')[0]

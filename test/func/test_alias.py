@@ -9,7 +9,7 @@ import tags
 def test_cli_release_alias(monkeypatch, function_repo):
     'Releasing packages under an alias is OK'
     function_repo.packages('a', 'b')
-    monkeypatch.setattr(tags.message, 'capture_message', lambda: 'User message')
+    monkeypatch.setattr(tags.notes, 'capture_message', lambda: 'User message')
     runner = CliRunner()
     release_alias = 'alias'
     result = runner.invoke(tags.cli.main, ['release', 'a', 'b', '-a', release_alias])
@@ -20,7 +20,7 @@ def test_cli_release_alias(monkeypatch, function_repo):
 def test_cli_release_bad_alias(monkeypatch, function_repo):
     'Aliasing a release to a package name is not OK'
     function_repo.packages('a', 'b')
-    monkeypatch.setattr(tags.message, 'capture_message', lambda: 'User message')
+    monkeypatch.setattr(tags.notes, 'capture_message', lambda: 'User message')
     runner = CliRunner()
     print(runner.invoke(tags.cli.main, ['release', 'a', 'b']).output)  # register packages
     release_alias = 'a'  # same as a package name

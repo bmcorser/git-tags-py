@@ -8,7 +8,7 @@ import subprocess
 
 def test_cli_lookup_yaml(monkeypatch, function_repo):
     'Can lookup the latest a package release by name'
-    monkeypatch.setattr(tags.message, 'capture_message', lambda: 'User message')
+    monkeypatch.setattr(tags.notes, 'capture_message', lambda: 'User message')
     map(function_repo.commit, ('a', 'b'))
     runner = CliRunner()
     # update package 'a'
