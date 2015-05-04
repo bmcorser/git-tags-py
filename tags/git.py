@@ -1,4 +1,5 @@
 import logging
+import os
 import subprocess
 
 import click
@@ -185,3 +186,13 @@ def tag_dict(tag):
         'timezone': timezone,
         'message': tag_message
     }
+
+
+def is_repo(repo_dir):
+    '''
+    Return True if the passed irectory looks like a Git repository, otherwise
+    return False.
+    '''
+    if os.path.isdir(os.path.join(repo_dir, '.git')):
+        return True
+    return False

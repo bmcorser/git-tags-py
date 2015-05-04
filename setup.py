@@ -9,5 +9,5 @@ setup(
     version=VERSION,
     packages=['tags'],
     install_requires=['click', 'pyyaml'],
-    entry_points={'console_scripts': ['tag=tags.cli:main']}
+    entry_points={'console_scripts': ['tag=tags.cli.main:command_group']}
 )

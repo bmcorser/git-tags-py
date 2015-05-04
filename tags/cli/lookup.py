@@ -7,18 +7,21 @@ import click
 
 from .. import lookup
 from . import printing
-from .main import main
+from . import main
 
 
-@main.command(name='lookup')
+@main.command_group.command(name='lookup')
 @click.argument('pkgs', nargs=-1)
 @click.option('--alias', '-a', help='Packages released under alias')
 @click.option('--commit', '-c', help='Packages released at commit')
 @click.option('--number', '-n', default=1,
               help='The number of historic releases to return')
+@click.option('--repo', default=os.getcwd(), callback=main.validate_repo,
+              help='Specify repository, defaults to the cwd')
 @click.option('--yaml', '-y', 'yaml_out', is_flag=True, help='Output as YAML')
-def lookup_cli(pkgs, alias, commit, number, yaml_out):
+def lookup_cli(pkgs, alias, commit, number, yaml_out, repo):
     'Get the latest release name(s)'
+    os.chdir(repo)  # for subprocess calls to git
     if commit and pkgs:
         click.echo('Either packages or commit. Not both.')
         exit(os.EX_USAGE)

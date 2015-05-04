@@ -10,13 +10,13 @@ from .. import lookup
 from .. import release as release_cls
 from .. import utils as utils
 
-from .main import main
+from . import main
 from . import messages
 from . import notes
 from . import printing
 
 
-@main.command(name='release')
+@main.command_group.command(name='release')
 @click.argument('pkgs', nargs=-1)
 @click.option('--alias', '-a', help='Release packages under an alias')
 @click.option('--release-notes', '-m', default=None,
@@ -27,34 +27,30 @@ from . import printing
               help='Ignore dirty repo warnings')
 @click.option('--no-remote', is_flag=True, default=False,
               help='DEBUG: Don’t publish tags now')
-@click.option('--undo', is_flag=True, default=False,
-              help='DEBUG: Delete tags for specified release')
-@click.option('--repo',
-              help='Specify repository, defaults to the repo closest to '
-                   '$(cwd)')
-def release_cli(pkgs, alias, release_notes, force, no_remote, undo, repo):
-    messages.release_doc
+@click.option('--repo', default=os.getcwd(), callback=main.validate_repo,
+              help='Specify repository, defaults to the cwd')
+def release_cli(pkgs, alias, release_notes, force, no_remote, repo):
+    '''
+    Cut a new release. Like a boss.
+
+    EXAMPLES:
+
+    Release some packages:
+
+        tag release pkg-a pkg-b
+
+    Release packages under an alias:
+
+        tag release pkg-x pkg-y pkg-z --alias=alphabet-end
+    '''
+    os.chdir(repo)  # for subprocess calls to git
     if no_remote:
         git.has_remote = lambda: False
-    if repo:
-        if os.path.isdir(os.path.join(repo, '.git')):
-            os.chdir(repo)
-        else:
-            invalid_repo = (
-                'ERROR: You must select a valid Git repository with the '
-                '--repo option'
-            )
-            click.secho(invalid_repo, fg='red', bold=True)
     status = git.status()
     if bool(status) and not force:
         click.echo()
         printing.print_status(status)
-        explain = (
-            'ERROR: Refusing to release with untracked (??), unstaged ( M) or '
-            'uncommitted (A ) files present (see above). Please '
-            'stash/commit/reset your changes or override with --force'
-        )
-        click.secho(explain, fg='red', bold=True)
+        click.secho(messages.release_repo_dirty, fg='red', bold=True)
         exit(os.EX_USAGE)
     release_inst = release_cls.Release(git.head_abbrev(), alias, set(pkgs))
     release_inst.validate_alias()
