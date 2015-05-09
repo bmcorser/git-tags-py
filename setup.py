@@ -7,7 +7,7 @@ setup(
     description=DESC,
     short_description=DESC,
     version=VERSION,
-    packages=['tags'],
+    packages=['tags', 'tags.cli'],
     install_requires=['click', 'pyyaml'],
     entry_points={'console_scripts': ['tag=tags.cli.main:command_group']}
 )
