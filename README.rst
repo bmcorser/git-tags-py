@@ -1,6 +1,9 @@
 git-tags-py
 ###########
 
+.. image:: https://travis-ci.org/bmcorser/git-tags-py.svg?branch=master
+    :target: https://travis-ci.org/bmcorser/git-tags-py
+
 Designed for continuous delivery workflows, where releases are frequent.
 
 From the command line
@@ -14,4 +17,6 @@ release tags.
 
 From a Python script
 --------------------
-
+The ``lookup`` and ``release`` modules expose the same functionality as the
+CLI, but return Python data structures instead of printing things to the
+terminal.
