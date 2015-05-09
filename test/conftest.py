@@ -25,6 +25,8 @@ def create_temp_repo():
     os.mkdir('remote_repo')
     os.chdir('remote_repo')
     subprocess.check_call(['git', 'init'])
+    subprocess.check_call(['git', 'config', 'user.email', 'user@test'])
+    subprocess.check_call(['git', 'config', 'user.name', 'Test User'])
     global time
     time = 1329000000
     def inc_time():
