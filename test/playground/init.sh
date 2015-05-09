@@ -2,10 +2,8 @@
 
 set -e
 root=$(pwd)
-repos="${root}/repos"
-local_repo="${repos}/local"
-remote_repo="${repos}/remote"
-mkdir ${repos}
+local_repo="${root}/local"
+remote_repo="${root}/remote"
 
 init_repo () {
     repo_dir=$1
@@ -18,6 +16,8 @@ init_repo ${remote_repo}
 
 init_repo ${local_repo}
 git remote add origin ${remote_repo}
+git config user.name playground-user
+git config user.email user@playground
 
 for pkg in $@
 do
@@ -27,4 +27,4 @@ do
 done;
 
 git add .
-git commit -m a
+git commit -m 'Initial playground commit'

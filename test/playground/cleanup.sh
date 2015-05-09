@@ -1,3 +1,3 @@
 #! /bin/bash
 
-rm -rf local repos
+rm -rf local remote

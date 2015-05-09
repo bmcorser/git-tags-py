@@ -1,8 +1,7 @@
 #! /bin/bash
 
 root=$(pwd)
-repos="${root}/repos"
-local_repo="${repos}/local"
+local_repo="${root}/local"
 
 cd ${local_repo}
 

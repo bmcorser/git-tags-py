@@ -52,7 +52,7 @@ def lookup_cli(pkgs, alias, commit, number, yaml_out, repo):
         exit(os.EX_USAGE)
     pkg_releases = {}
     for pkg in pkgs:
-        pkg_releases[pkg] = lookup.package(pkg)
+        pkg_releases[str(pkg)] = lookup.package(pkg)
     if not pkg_releases:
         click.echo("No releases for package {0}".format(alias))
         exit(os.EX_DATAERR)
