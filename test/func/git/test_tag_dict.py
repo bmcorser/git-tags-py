@@ -18,7 +18,7 @@ Things that happened:
     - The other'''
     runner = CliRunner()
     cmd = ['release', 'pkg-a', '-a', 'test-alias', '-m', user_message]
-    runner.invoke(tags.cli.main, cmd)
+    runner.invoke(tags.cli.command_group, cmd)
     tag = tags.git.tag_refs('releases/test-alias/pkg-a')[0]
     _, _, _, commit = tag.split('/')
     expected = {

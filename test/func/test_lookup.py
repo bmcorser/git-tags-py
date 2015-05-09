@@ -14,6 +14,6 @@ def test_cli_lookup_yaml(function_repo):
     function_repo.commit('a')
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()[:7]
     # release package 'b'
-    print(runner.invoke(tags.cli.main, ['release','b', '-m', 'a']).output)
-    result = runner.invoke(tags.cli.main, ['lookup', 'b', '--yaml'])
+    print(runner.invoke(tags.cli.command_group, ['release','b', '-m', 'a']).output)
+    result = runner.invoke(tags.cli.command_group, ['lookup', 'b', '--yaml'])
     assert commit in result.output

@@ -11,3 +11,7 @@ subcommands ``release`` to cut new releases and ``lookup`` to inspect historic
 release tags.
 
 .. _playground: https://github.com/bmcorser/git-tags-py/tree/master/test/playground
+
+From a Python script
+--------------------
+

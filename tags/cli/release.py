@@ -27,7 +27,7 @@ from . import printing
               help='Ignore dirty repo warnings')
 @click.option('--no-remote', is_flag=True, default=False,
               help='DEBUG: Don’t publish tags now')
-@click.option('--repo', default=os.getcwd(), callback=main.validate_repo,
+@click.option('--repo', callback=main.validate_repo,
               help='Specify repository, defaults to the cwd')
 def release_cli(pkgs, alias, release_notes, force, no_remote, repo):
     '''

@@ -16,7 +16,7 @@ from . import main
 @click.option('--commit', '-c', help='Packages released at commit')
 @click.option('--number', '-n', default=1,
               help='The number of historic releases to return')
-@click.option('--repo', default=os.getcwd(), callback=main.validate_repo,
+@click.option('--repo', callback=main.validate_repo,
               help='Specify repository, defaults to the cwd')
 @click.option('--yaml', '-y', 'yaml_out', is_flag=True, help='Output as YAML')
 def lookup_cli(pkgs, alias, commit, number, yaml_out, repo):
