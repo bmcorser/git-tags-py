@@ -6,13 +6,13 @@ shell script version of the ``function_repo`` fixture.
 
 Creating a playground
 ---------------------
-The ``init.sh`` script will create a ``local`` repository then create a
+The ``./init`` script will create a ``local`` repository then create a
 ``remote`` repository and identify it as the “origin” of local. Arguments are
 the package names. Usage example:
 
 .. code-block:: plain
 
-    $ ./init.sh pkg-a pkg-b
+    $ ./init pkg-a pkg-b
     # ...
     $ tree local
     local
@@ -28,7 +28,7 @@ the package names. Usage example:
     origin  .../test/playground/remote (push)
 
 Paths are truncated for brevity. We can see that the “packages” supplied to
-``./init.sh`` have been created in the local repo and the remote repo is set as
+``./init`` have been created in the local repo and the remote repo is set as
 its origin (the default remote).
 
 Playing with the CLI
@@ -72,12 +72,12 @@ Cutting more releases
 ---------------------
 Since releases are bound to Git commits, it is not possible create more than
 one release for any given commit unless releasing under an alias. The
-``touch.sh`` script will create a new commit for the passed package(s),
-allowing a new release to be cut.  Usage example:
+``./touch`` script will create a new commit for the passed package(s), allowing a
+new release to be cut.  Usage example:
 
 .. code-block:: plain
 
-    $ ./touch.sh pkg-a
+    $ ./touch pkg-a
     [master 25761f8] Commit on Mon  4 May 2015 00:36:31 BST
      1 file changed, 1 insertion(+), 1 deletion(-)
 
@@ -92,7 +92,7 @@ release history:
 
 .. code-block:: plain
 
-    $ ./touch.sh pkg-a
+    $ ./touch pkg-a
     $ tag release pkg-a -m 'Next release' --repo local
     $ tag lookup pkg-a --repo local --yaml
     pkg-a:
@@ -106,5 +106,5 @@ release history:
 Starting over
 -------------
 If you get sick of the package names you’ve chosen and want to start over, the
-``cleanup.sh`` will delete the local and remote repos. It could even you save a
+``./cleanup`` will delete the local and remote repos. It could even you save a
 few keystrokes...

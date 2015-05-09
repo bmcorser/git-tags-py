@@ -22,7 +22,7 @@ git config user.email user@playground
 for pkg in $@
 do
     :
-    mkdir ${local_repo}/${pkg}
+    mkdir -p ${local_repo}/${pkg}
     echo $(date) > ${local_repo}/${pkg}/deploy
 done;
 
