@@ -2,7 +2,10 @@ Playground
 ==========
 Scripts for simulating the default local/remote set up, adding new commits by
 package. Used for creating disposable repositories to play with. Basically a
-shell script version of the ``function_repo`` fixture.
+shell script version of the |function_repo| fixture.
+
+.. |function_repo| replace:: ``function_repo``
+.. _function_repo: https://github.com/bmcorser/git-tags-py/blob/master/test/conftest.py#L84
 
 Creating a playground
 ---------------------
