@@ -37,6 +37,8 @@ class Release(object):
                     aliased_tag = git.fmt_tag(pkg, self.commit, self.alias)
                     tags_list.append(aliased_tag)
                 tags_list.append(git.fmt_tag(pkg, self.commit, None))
+                # also tag at package commit for later comparison
+                tags_list.append(git.fmt_tag(pkg, git.head_abbrev(pkg), None))
             self._tags = set(tags_list)
         return self._tags
 
@@ -96,7 +98,7 @@ class Release(object):
                 exit(os.EX_DATAERR)
 
     def released(self, pkg):
-        'Return bool for existing release of package'
+        'Return tag for existing release of package or None'
         last_release = git.head_abbrev(pkg)
         pkg_tag = git.fmt_tag(pkg, last_release, self.alias)
         tag = git.fmt_tag(pkg, self.commit, self.alias)
