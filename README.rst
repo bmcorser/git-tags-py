@@ -33,7 +33,8 @@ example might look like this:
     >>> release.new_tags
     {'releases/pkg-a/85a4b16', 'releases/pkg-b/85a4b16'}
     >>> release.create_tags()  # write tags to the repo
-    >>> release.validate_unreleased()
+
+Now let's look up the release by package name:
 
 .. code-block:: python
 
