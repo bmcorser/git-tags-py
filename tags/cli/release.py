@@ -50,7 +50,7 @@ def release_cli(pkgs, alias, release_notes, force, no_remote, repo):
     if bool(status) and not force:
         click.echo()
         printing.print_status(status)
-        click.secho(messages.release_repo_dirty, fg='red', bold=True)
+        printing.error(messages.release_repo_dirty)
         exit(os.EX_USAGE)
     release_inst = release_cls.Release(git.head_abbrev(), alias, set(pkgs))
     release_inst.validate_alias()

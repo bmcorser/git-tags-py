@@ -2,6 +2,19 @@ import collections
 from . import git
 
 
+class ReleaseLookupException(Exception):
+    pass
+
+class PackageNotFound(ReleaseLookupException):
+    pass
+
+class CommitNotFound(ReleaseLookupException):
+    pass
+
+class AliasNotFound(ReleaseLookupException):
+    pass
+
+
 def sort_releases(releases):
     'Return sorted list of release tags (by commit time, not tag time)'
     get_commit = lambda tag: tag.split('/')[-1]  # probably not quicker to
@@ -20,6 +33,8 @@ def commit(name, _alias=None):
     'Return data for packages released at passed commit, filtered by alias'
     glob = git.fmt_tag(alias=_alias, pkg='**', commit=name)
     commit_tags = git.tag_refs(glob)
+    if not commit_tags:
+        raise CommitNotFound("No releases for commit {0}".format(name))
     return map(git.tag_dict, sort_releases(commit_tags))
 
 
@@ -30,6 +45,8 @@ def package(name, _alias=None):
     '''
     glob = git.fmt_tag(alias=_alias, pkg=name, commit='**')
     pkg_tags = git.tag_refs(glob)
+    if not pkg_tags:
+        raise PackageNotFound("No releases for package {0}".format(name))
     return map(git.tag_dict, sort_releases(pkg_tags))
 
 
@@ -37,6 +54,8 @@ def alias_pkgs(name):
     'Return packages included in passed alias'
     glob = git.fmt_tag(alias=name, pkg='*', commit='*')
     alias_tags = git.tag_refs(glob)
+    if not alias_tags:
+        raise AliasNotFound("No releases under alias {0}".format(name))
     pkgs = set()
     for tag in alias_tags:
         _, _, pkg, _ = tag.split('/')

@@ -2,7 +2,6 @@ import pytest
 
 import collections
 import copy
-import operator
 import os
 import tempfile
 import traceback
@@ -29,14 +28,17 @@ def create_temp_repo():
     subprocess.check_call(['git', 'config', 'user.name', 'Test User'])
     global time
     time = 1329000000
+
     def inc_time():
         global time
         time += 100
         os.environ['GIT_COMMITTER_DATE'] = "{0} +0000".format(time)
         os.environ['GIT_AUTHOR_DATE'] = "{0} +0000".format(time)
+
     def touch(path):
         with open(path, 'w') as deploy_file:
             deploy_file.write(str(time))
+
     def commit(name):
         'Touch the deploy file in the named package and commit it'
         path = os.path.join(name, 'deploy')
@@ -50,13 +52,14 @@ def create_temp_repo():
         inc_time()
         commit_return = subprocess.check_output(['git', 'commit', '-m', name])
         return commit_return.split(' ')[1].strip(']'), copy.copy(time)
+
     def packages(*names):
         return [commit(name) for name in names]
+
     touch('init')
     subprocess.check_call(['git', 'add', '.'])
     inc_time()
     subprocess.check_call(['git', 'commit', '-m', 'Initial commit'])
-    '''subprocess.check_call(['git', 'tag', '-a', 'a', '-m', 'Tag a'])'''
     os.chdir(repo_dir)
     subprocess.check_call(['git', 'clone', 'remote_repo', 'local_repo'])
     os.chdir('local_repo')
@@ -64,9 +67,11 @@ def create_temp_repo():
     user_email = 'tarquin@tagger.com'
     subprocess.check_output(['git', 'config', 'user.name', user_name])
     subprocess.check_output(['git', 'config', 'user.email', user_email])
+
     def cleanup():
         os.chdir(old_dir)
         shutil.rmtree(repo_dir)
+
     repo_dict = {
         'user_name': user_name,
         'user_email': user_email,

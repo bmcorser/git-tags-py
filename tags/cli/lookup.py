@@ -23,10 +23,10 @@ def lookup_cli(pkgs, alias, commit, number, yaml_out, repo):
     'Get the latest release name(s)'
     os.chdir(repo)  # for subprocess calls to git
     if commit and pkgs:
-        click.echo('Either packages or commit. Not both.')
+        printing.error('Either packages or commit. Not both.')
         exit(os.EX_USAGE)
     if alias and pkgs:
-        click.echo('Either packages or alias. Not both.')
+        printing.error('Either packages or alias. Not both.')
         exit(os.EX_USAGE)
     '''
     if commit and number:
@@ -34,16 +34,18 @@ def lookup_cli(pkgs, alias, commit, number, yaml_out, repo):
         exit(os.EX_USAGE)
     '''
     if commit:
-        commit_releases = lookup.commit(commit, _alias=alias)
-        if not commit_releases:
-            click.echo("Nothing released at {0}".format(commit))
+        try:
+            commit_releases = lookup.commit(commit, _alias=alias)
+        except lookup.CommitNotFound as exc:
+            printing.error(exc)
             exit(os.EX_DATAERR)
         printing.print_releases(commit_releases, yaml_out)
         exit(os.EX_OK)
     if alias:
-        alias_releases = lookup.alias(alias)
-        if not alias_releases:
-            click.echo("Nothing released under alias {0}".format(alias))
+        try:
+            alias_releases = lookup.alias(alias)
+        except lookup.AliasNotFound as exc:
+            printing.error(exc)
             exit(os.EX_DATAERR)
         printing.print_releases(alias_releases, yaml_out)
         exit(os.EX_OK)
@@ -52,9 +54,10 @@ def lookup_cli(pkgs, alias, commit, number, yaml_out, repo):
         exit(os.EX_USAGE)
     pkg_releases = {}
     for pkg in pkgs:
-        pkg_releases[str(pkg)] = lookup.package(pkg)
-    if not pkg_releases:
-        click.echo("No releases for package {0}".format(alias))
-        exit(os.EX_DATAERR)
+        try:
+            pkg_releases[str(pkg)] = lookup.package(pkg)
+        except lookup.PackageNotFound as exc:
+            printing.error(exc)
+            exit(os.EX_DATAERR)
     printing.print_releases(pkg_releases, yaml_out)
     exit(os.EX_OK)

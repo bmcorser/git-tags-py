@@ -37,3 +37,8 @@ def print_releases(releases, yaml_out):
         exit(os.EX_OK)
     click.echo('User printing is not yet implemented, try with --yaml')
     exit(os.EX_UNAVAILABLE)
+
+
+def error(message):
+    'Print something in red with big ERROR prefix'
+    click.secho("ERROR: {0}".format(message), fg='red', bold=True)
