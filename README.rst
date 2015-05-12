@@ -69,8 +69,8 @@ Watch the magic unfold without typing a thing (depends the excellent pyenv_)::
 
     git clone git@github.com:bmcorser/git-tags-py.git
     cd git-tags-py
-    pyenv virtualenv 2.7.8 !$
-    pyenv activate !$
+    pyenv virtualenv 2.7.8 git-tags-py
+    pyenv activate git-tags-py
     python setup.py install
     cd test/playground
     ./init pkg-a pkg-b
