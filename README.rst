@@ -4,7 +4,7 @@ git-tags-py
 .. image:: https://travis-ci.org/bmcorser/git-tags-py.svg?branch=master
     :target: https://travis-ci.org/bmcorser/git-tags-py
 
-Designed for continuous delivery workflows, where releases are frequent.
+Designed for continuous deliveryish workflows, where releases are frequent.
 
 From the command line
 ---------------------
