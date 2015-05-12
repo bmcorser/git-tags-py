@@ -62,3 +62,19 @@ Now let's look up the release by package name:
       'tagger_name': 'playground-user',
       'time': '1431374444',
       'timezone': '+0100'}]
+
+Copy pasta :spaghetti:
+----------------------
+Watch the magic unfold without typing a thing::
+
+    git clone git@github.com:bmcorser/git-tags-py.git
+    cd git-tags-py
+    pyenv virtualenv 2.7.8 !$
+    pyenv activate !$
+    python setup.py install
+    cd test/playground
+    ./init pkg-a pkg-b
+    tag release pkg-a -m 'Release me!' --repo local
+    ./touch pkg-a
+    tag release \* -m 'Just release whatever' --repo local
+    tag lookup pkg-a --repo local --yaml
