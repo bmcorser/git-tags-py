@@ -15,13 +15,17 @@ release tags.
 
 ``release``
 '''''''''''
-::
+
+.. code-block::
+
     tag release [<pkg>, [<pkg>, ...]] [-a <alias>] [-m <message>]
                 [--force] [--no-remote] [--repo <path>]
 
 ``lookup``
 ''''''''''
-::
+
+.. code-block::
+
     tag lookup [<pkg>, [<pkg>, ...]] [-a <alias>|-c <commit>]
                [--repo] [--yaml]
 
