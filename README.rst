@@ -65,7 +65,7 @@ Now let's look up the release by package name:
 
 Copy pasta :spaghetti:
 ----------------------
-Watch the magic unfold without typing a thing::
+Watch the magic unfold without typing a thing (depends the excellent pyenv_)::
 
     git clone git@github.com:bmcorser/git-tags-py.git
     cd git-tags-py
@@ -78,3 +78,5 @@ Watch the magic unfold without typing a thing::
     ./touch pkg-a
     tag release \* -m 'Just release whatever' --repo local
     tag lookup pkg-a --repo local --yaml
+
+.. _pyenv: https://github.com/yyuu/pyenv
