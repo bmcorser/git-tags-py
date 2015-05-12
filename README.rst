@@ -13,13 +13,25 @@ with command line usage. The “entrypoint” command is simply ``tag`` with two
 subcommands ``release`` to cut new releases and ``lookup`` to inspect historic
 release tags.
 
+``release``
+'''''''''''
+::
+    tag release [<pkg>, [<pkg>, ...]] [-a <alias>] [-m <message>]
+                [--force] [--no-remote] [--repo <path>]
+
+``lookup``
+''''''''''
+::
+    tag lookup [<pkg>, [<pkg>, ...]] [-a <alias>|-c <commit>]
+               [--repo] [--yaml]
+
 .. _playground: https://github.com/bmcorser/git-tags-py/tree/master/test/playground
 
 From a Python script
 --------------------
 The ``lookup`` and ``release`` modules expose the same functionality as the
 CLI, but return Python data structures instead of printing things to the
-terminal. If your current working directory is a Git repoistory, a simple
+terminal. If your current working directory is a Git repository, a simple
 example might look like this:
 
 .. code-block:: python
