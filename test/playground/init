@@ -24,6 +24,7 @@ do
     :
     mkdir -p ${local_repo}/${pkg}
     echo $(date) > ${local_repo}/${pkg}/deploy
+    echo $(date) > ${local_repo}/${pkg}/build
 done;
 
 git add .

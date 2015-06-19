@@ -8,7 +8,8 @@ cd ${local_repo}
 for pkg in $@
 do
     :
-    echo $(date) > ${local_repo}/${pkg}/deploy
+    echo $(date +%s.%N) > ${local_repo}/${pkg}/build
+    echo $(date +%s.%N) > ${local_repo}/${pkg}/deploy
 done;
 
 git add .
