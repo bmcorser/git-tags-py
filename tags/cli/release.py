@@ -17,8 +17,8 @@ from . import printing
 
 
 @main.command_group.command(name='release')
-@click.argument('pkgs', nargs=-1)
-@click.option('--alias', '-a', help='Release packages under an alias')
+@click.option('--channel', '-c', default='development', help='Release channel,'
+              ' defaults to development')
 @click.option('--release-notes', '-m', default=None,
               help='Tell others what this release is. If this option is not '
                    'supplied on the command line, $EDITOR will be used to '
@@ -27,21 +27,21 @@ from . import printing
               help='Ignore dirty repo warnings')
 @click.option('--no-remote', is_flag=True, default=False,
               help='DEBUG: Don’t publish tags now')
-@click.option('--repo', callback=main.validate_repo,
+@click.option('--repo', '-r', callback=main.validate_repo,
               help='Specify repository, defaults to the cwd')
-def release_cli(pkgs, alias, release_notes, force, no_remote, repo):
+def release_cli(pkgs, channel, release_notes, force, no_remote, repo):
     '''
     Cut a new release. Like a boss.
 
     EXAMPLES:
 
-    Release some packages:
+    Release to default channel (development):
 
-        tag release pkg-a pkg-b
+        tag release
 
-    Release packages under an alias:
+    Release to named channel:
 
-        tag release pkg-x pkg-y pkg-z --alias=alphabet-end
+        tag release -c production
     '''
     os.chdir(repo)  # for subprocess calls to git
     if no_remote:
@@ -52,7 +52,7 @@ def release_cli(pkgs, alias, release_notes, force, no_remote, repo):
         printing.print_status(status)
         printing.error(messages.release_repo_dirty)
         exit(os.EX_USAGE)
-    release_inst = release_cls.Release(git.head_abbrev(), alias, set(pkgs))
+    release_inst = release_cls.Release(channel)
     release_inst.validate_alias()
     # release_inst.validate_pkgs()
     release_inst.validate_unreleased()
@@ -80,5 +80,11 @@ def release_cli(pkgs, alias, release_notes, force, no_remote, repo):
     click.echo('Tags created:')
     for tag in release_inst.new_tags:
         click.secho('  ' + tag, fg='yellow')
-    git.push_tags()
+    push_ok, stderr = git.push_tags()
+    if not push_ok:
+        click.echo("Error pushing release tags: {0}".format(stderr))
+        click.echo('This release will not be available until the tags are '
+                   'pushed. You may be able to push the tags manually '
+                   'with:\n\n'
+                   '  git push --tags')
     click.echo('Bye.')

@@ -1,4 +1,5 @@
 import collections
+import yaml
 from . import git
 
 
@@ -13,6 +14,15 @@ class CommitNotFound(ReleaseLookupException):
 
 class AliasNotFound(ReleaseLookupException):
     pass
+
+
+def channel_releases(channel):
+    'Get data for the last release'
+    refs = git.channel_refs(channel)
+    if not len(refs):
+        return None
+    refs.sort(reverse=True)
+    return [ref.split(': ')[0] for ref in refs]
 
 
 def sort_releases(releases):

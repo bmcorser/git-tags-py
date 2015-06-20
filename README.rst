@@ -6,6 +6,29 @@ git-tags-py
 
 Designed for continuous deliveryish workflows, where releases are frequent.
 
+## Setup
+To define packages, add `.gitattributes` files to your repository
+
+Packages are defined by attributes in a parent directory, setting the `package`
+attribute for a directory
+ 
+## Release logic
+required args
+ - channel
+
+
+## Release data
+tag:
+  ref: refs/tags/releases/<channel>/<number>
+  object: <commit>
+  body:
+    packages:
+      <name>: <tree>
+      <name>: <tree>
+[note:
+  ref: refs/notes/releases
+  object: <tag>]
+
 From the command line
 ---------------------
 There’s a playground_ for that, it’s probably the easiest way to get to grips

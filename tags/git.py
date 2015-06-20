@@ -1,3 +1,4 @@
+import string
 import logging
 import os
 import subprocess
@@ -16,13 +17,6 @@ LOGGER = logging.getLogger(__name__)
 def log_cmd(cmd):
     'Log the invocation of a command'
     LOGGER.debug("Invoking {cmd}".format(cmd=' '.join(cmd)))
-
-
-def fmt_tag(pkg, commit, alias):
-    'Return ref name for package, commit and optional alias'
-    if alias:
-        return FMT_TAG_ALIAS.format(alias=alias, pkg=pkg, commit=commit)
-    return FMT_TAG.format(pkg=pkg, commit=commit)
 
 
 class TagError(Exception):
@@ -62,19 +56,6 @@ def fetch():
     fetch_tags_cmd = ['git', 'fetch', '--tags']
     log_cmd(fetch_tags_cmd)
     subprocess.check_call(fetch_tags_cmd)
-
-
-def list_tags():
-    'List local tags'
-    list_tags_cmd = ['git', 'tag', '-l']
-    log_cmd(list_tags_cmd)
-    return utils.filter_empty_lines(subprocess.check_output(list_tags_cmd))
-
-
-def get_tag_list():
-    'Fetch tags from remote abd list them'
-    fetch()
-    return list_tags()
 
 
 def create_tag(message, name):
@@ -122,11 +103,8 @@ def push_tags():
                             stderr=subprocess.PIPE)
     if proc.wait() > 0:
         _, stderr = proc.communicate()
-        click.echo("Error pushing release tags: {0}".format(stderr))
-        click.echo('This release will not be available until the tags are '
-                   'pushed. You may be able to push the tags manually '
-                   'with:\n\n'
-                   '  git push --tags')
+        return None, stderr
+    return True, None
 
 
 def status():
@@ -136,24 +114,16 @@ def status():
     return subprocess.check_output(cmd)
 
 
-def tag_refs(namespace):
+def channel_refs(channel):
     'Return the short refs of tags in the passed namespace'
     cmd = [
         'git',
         'for-each-ref',
         '--format',
-        '%(refname:short)',
-        "refs/tags/{0}".format(namespace),
+        '%(refname:short): %(objectname:short)',
+        "refs/tags/releases/{0}/*".format(channel),
     ]
     log_cmd(cmd)
-    return utils.filter_empty_lines(subprocess.check_output(cmd))
-
-
-def sort_refs(refs):
-    'Return sorted list of passed refs as abbreviated hashes, latest first'
-    cmd = ['git', 'rev-list', '--no-walk', '--abbrev-commit']
-    log_cmd(cmd)
-    map(cmd.append, refs)
     return utils.filter_empty_lines(subprocess.check_output(cmd))
 
 
@@ -196,3 +166,29 @@ def is_repo(repo_dir):
     if os.path.isdir(os.path.join(repo_dir, '.git')):
         return True
     return False
+
+
+def attrs_dict(directory):
+    'Return the attributes for a directory as a dict'
+    attr_cmd = ['git', 'check-attr', '-a', directory]
+    log_cmd(attr_cmd)
+    output = subprocess.check_output(attr_cmd)
+    ret_dict = {}
+    for line in utils.filter_empty_lines(output):
+        _, name, value = line.split(': ')
+        ret_dict[name] = value
+    return ret_dict
+
+
+def recurse_tree(root, remaining):
+    if not len(remaining):
+        return root
+    for _, git_type, oid, name in map(string.split, cat_file(root)):
+        if name == remaining[0]:
+            return recurse_tree(oid, remaining[1:])
+
+
+def path_tree(path):
+    'Get the object ID for the directory at `path`'
+    root = cat_file('HEAD')[0].split()[1]
+    return recurse_tree(root, path.split('/'))
