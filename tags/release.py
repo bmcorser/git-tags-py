@@ -86,7 +86,10 @@ class Release(object):
 
     def is_pkg(self, pkg):
         'Return bool of whether passed directory name is a package'
-        return os.path.isfile(os.path.join(pkg, 'deploy'))
+        for name in ('deploy', 'build'):
+            if not os.path.isfile(os.path.join(pkg, name)):
+                return False
+        return True
 
     def validate_pkgs(self):
         'Validate all the packages we are releasing have a deploy script'
