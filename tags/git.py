@@ -2,6 +2,7 @@ import string
 import logging
 import os
 import subprocess
+import yaml
 
 import click
 
@@ -116,11 +117,12 @@ def status():
 
 def channel_refs(channel):
     'Return the short refs of tags in the passed namespace'
+    '%(refname:short): %(objectname:short)',
     cmd = [
         'git',
         'for-each-ref',
         '--format',
-        '%(refname:short): %(objectname:short)',
+        '%(refname:short)',
         "refs/tags/releases/{0}/*".format(channel),
     ]
     log_cmd(cmd)
@@ -147,14 +149,14 @@ def tag_dict(tag):
     'Return the contents of a tag as a dictionary'
     contents = cat_file(tag)
     tagger, email, time, timezone = tagger_line_tokens(contents[3].split(' '))
-    tag_message = '\n'.join(contents[4:])
+    body = yaml.load('\n'.join(contents[4:]))
     return {
         'tag': tag,
         'tagger_name': tagger,
         'tagger_email': email.strip('<>'),
         'time': time,
         'timezone': timezone,
-        'message': tag_message
+        'body': body
     }
 
 
@@ -192,3 +194,15 @@ def path_tree(path):
     'Get the object ID for the directory at `path`'
     root = cat_file('HEAD')[0].split()[1]
     return recurse_tree(root, path.split('/'))
+
+
+def checkout(commitish):
+    'Check out the commitish'
+    checkout_cmd = ['git', 'checkout', commitish]
+    log_cmd(checkout_cmd)
+    proc = subprocess.Popen(checkout_cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    if proc.wait() > 0:
+        _, stderr = proc.communicate()
+        raise Exception('check out error')

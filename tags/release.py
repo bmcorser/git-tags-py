@@ -15,21 +15,6 @@ def is_pkg(repo_path, pkg):
     return True
 
 
-def get_packages(repo_path):
-    'Get a list of packages defined in the passed repository'
-    ret_dict = {}
-    not_git = filter(lambda path: '.git' not in path, os.listdir(repo_path))
-    for path_ in not_git:
-        for path, _, _ in os.walk(path_):
-            attrs = git.attrs_dict(path)
-            if attrs.pop('package', None) == 'set':
-                if any([path.startswith(seen) for seen in ret_dict.keys()]):
-                    msg = "Nested packages not allowed: {0}"
-                    raise Exception(msg.format(path))
-                ret_dict[os.path.relpath(path)] = attrs
-    return ret_dict
-
-
 def validate_pkgs(pkgs):
     'Validate all the packages we are releasing have a deploy script'
     for pkg in pkgs:
@@ -68,7 +53,7 @@ class Release(object):
     def packages(self):
         if not self._packages:
             ret_dict = {}
-            for name in get_packages(self.repo_path).keys():
+            for name in lookup.packages(self.repo_path).keys():
                 ret_dict[name] = git.path_tree(name)
             self._packages = ret_dict
         return self._packages
@@ -83,13 +68,11 @@ class Release(object):
 
             def look_back(name):
                 for ref in released:
-                    tree = yaml.load(git.tag_dict(ref)['message']).get(name)
+                    tree = git.tag_dict(ref)['body'].get(name)
                     if tree:
                         return tree
 
-            tag_dict = git.tag_dict(released[0])
-            message = tag_dict.pop('message')
-            previous_release = yaml.load(message)
+            previous_release = git.tag_dict(released[0])['body']
 
             for name, tree in self.packages.items():
                 if name not in previous_release:
@@ -99,7 +82,8 @@ class Release(object):
 
                 if tree != last_tree:
                     ret_dict[name] = tree
-            return ret_dict
+            self._changed_packages = ret_dict
+        return self._changed_packages
 
     def create_tag(self):
         'Create the required tags for this release'

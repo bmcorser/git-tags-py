@@ -1,3 +1,4 @@
+import os
 import collections
 import yaml
 from . import git
@@ -21,62 +22,65 @@ def channel_releases(channel):
     refs = git.channel_refs(channel)
     if not len(refs):
         return None
-    refs.sort(reverse=True)
-    return [ref.split(': ')[0] for ref in refs]
+    refs.sort(reverse=True, key=lambda ref: int(ref.split('/')[-1]))
+    return refs
 
 
-def sort_releases(releases):
-    'Return sorted list of release tags (by commit time, not tag time)'
-    get_commit = lambda tag: tag.split('/')[-1]  # probably not quicker to
-                                                 # subprocess to cat-file
-    commit_releases = collections.defaultdict(set)
-    for tag in releases:
-        commit_releases[get_commit(tag)].add(tag)
-    sorted_commits = git.sort_refs(commit_releases.keys())
-    sorted_tags = []
-    for commit_ in sorted_commits:
-        sorted_tags.extend(sorted(commit_releases.get(commit_)))
-    return sorted_tags
+def packages(repo_path):
+    'Get a list of packages defined in the passed repository'
+    ret_dict = {}
+    not_git = filter(lambda path: '.git' not in path, os.listdir(repo_path))
+    for path_ in not_git:
+        for path, _, _ in os.walk(path_):
+            attrs = git.attrs_dict(path)
+            if attrs.pop('package', None) == 'set':
+                if any([path.startswith(seen) for seen in ret_dict.keys()]):
+                    msg = "Nested packages not allowed: {0}"
+                    raise Exception(msg.format(path))
+                ret_dict[os.path.relpath(path)] = attrs
+    return ret_dict
 
 
-def commit(name, _alias=None):
-    'Return data for packages released at passed commit, filtered by alias'
-    glob = git.fmt_tag(alias=_alias, pkg='**', commit=name)
-    commit_tags = git.tag_refs(glob)
-    if not commit_tags:
-        raise CommitNotFound("No releases for commit {0}".format(name))
-    return map(git.tag_dict, sort_releases(commit_tags))
+def channel_latest(channel):
+    refs = channel_releases(channel)
 
+    def look_back(name):
+        'Iterate through historic releases until we find our package'
+        for ref in refs:
+            tree = git.tag_dict(ref)['body'].get(name)
+            if tree:
+                return tree
+    git.checkout(refs[0])
+    ret_dict = {}
+    previous_release = git.tag_dict(refs[0])['body']
+    for name, attrs in packages('.').items():
+        if name not in previous_release:
+            tree = look_back(name)
+        else:
+            tree = previous_release[name]
+        ret_dict[name] = tree
+    return ret_dict
 
-def package(name, _alias=None):
-    '''
-    Return number (default one) of historic releases for passed package and
-    optional alias.
-    '''
-    glob = git.fmt_tag(alias=_alias, pkg=name, commit='**')
-    pkg_tags = git.tag_refs(glob)
-    if not pkg_tags:
-        raise PackageNotFound("No releases for package {0}".format(name))
-    return map(git.tag_dict, sort_releases(pkg_tags))
-
-
-def alias_pkgs(name):
-    'Return packages included in passed alias'
-    glob = git.fmt_tag(alias=name, pkg='*', commit='*')
-    alias_tags = git.tag_refs(glob)
-    if not alias_tags:
-        raise AliasNotFound("No releases under alias {0}".format(name))
-    pkgs = set()
-    for tag in alias_tags:
-        _, _, pkg, _ = tag.split('/')
-        pkgs.add(pkg)
-    return pkgs
-
-
-def alias(name):
-    'Return release data for passed alias'
-    pkgs = alias_pkgs(name)
-    alias_tags = {}
-    for pkg in pkgs:
-        alias_tags[pkg] = package(pkg, _alias=name)
-    return alias_tags
+def channel_release(channel, number):
+    ref = "releases/{0}/{1}".format(channel, number)
+    git.checkout(ref)
+    release = git.tag_dict(ref)
+    global _refs
+    _refs = None
+    def look_back(name):
+        'Iterate through historic releases until we find our package'
+        global _refs
+        if not _refs:
+            _refs = channel_releases(channel)
+        for ref in _refs:
+            tree = git.tag_dict(ref)['body'].get(name)
+            if tree:
+                return tree
+    ret_dict = {}
+    for name, attrs in packages('.').items():
+        if name not in release:
+            tree = look_back(name)
+        else:
+            tree = release[name]
+        ret_dict[name] = tree
+    return ret_dict

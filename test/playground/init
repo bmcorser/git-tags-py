@@ -25,6 +25,7 @@ do
     mkdir -p ${local_repo}/${pkg}
     echo $(date) > ${local_repo}/${pkg}/deploy
     echo $(date) > ${local_repo}/${pkg}/build
+    echo "${pkg} package" >> ${local_repo}/.gitattributes
 done;
 
 git add .

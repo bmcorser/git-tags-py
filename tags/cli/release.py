@@ -29,7 +29,7 @@ from . import printing
               help='DEBUG: Don’t publish tags now')
 @click.option('--repo', '-r', callback=main.validate_repo,
               help='Specify repository, defaults to the cwd')
-def release_cli(pkgs, channel, release_notes, force, no_remote, repo):
+def release_cli(channel, release_notes, force, no_remote, repo):
     '''
     Cut a new release. Like a boss.
 
@@ -52,18 +52,21 @@ def release_cli(pkgs, channel, release_notes, force, no_remote, repo):
         printing.print_status(status)
         printing.error(messages.release_repo_dirty)
         exit(os.EX_USAGE)
-    release_inst = release_cls.Release(channel)
-    release_inst.validate_alias()
-    # release_inst.validate_pkgs()
-    release_inst.validate_unreleased()
+    release_inst = release_cls.Release(repo, channel)
+    if not release_inst.changed_packages:
+        printing.error('No packages changed, nothing to release')
+        exit(os.EX_DATAERR)
     if not release_notes:
         release_notes = notes.capture_message()
         if not utils.filter_empty_lines(release_notes):
             click.echo('Release notes are required')
             click.echo('Bye.')
             exit(os.EX_NOINPUT)
+    '''
     release_inst.notes = release_notes
-    release_inst.create_tags()
+    '''
+    release_inst.create_tag()
+    '''
     click.echo('Release notes:')
     for line in release_notes.split('\n'):
         click.echo('  ' + line)
@@ -87,4 +90,5 @@ def release_cli(pkgs, channel, release_notes, force, no_remote, repo):
                    'pushed. You may be able to push the tags manually '
                    'with:\n\n'
                    '  git push --tags')
+    '''
     click.echo('Bye.')
