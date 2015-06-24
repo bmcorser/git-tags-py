@@ -31,13 +31,13 @@ def packages(repo_path):
     ret_dict = {}
     not_git = filter(lambda path: '.git' not in path, os.listdir(repo_path))
     for path_ in not_git:
-        for path, _, _ in os.walk(path_):
-            attrs = git.attrs_dict(path)
-            if attrs.pop('package', None) == 'set':
+        for path, _, files in os.walk(path_):
+            if '.package' in files:
                 if any([path.startswith(seen) for seen in ret_dict.keys()]):
                     msg = "Nested packages not allowed: {0}"
                     raise Exception(msg.format(path))
-                ret_dict[os.path.relpath(path)] = attrs
+                rel_path = os.path.relpath(path)
+                ret_dict[rel_path] = git.path_tree(rel_path)
     return ret_dict
 
 
