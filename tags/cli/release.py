@@ -62,6 +62,7 @@ def release_cli(channel, release_notes, force, no_remote, repo):
             click.echo('Release notes are required')
             click.echo('Bye.')
             exit(os.EX_NOINPUT)
+    git.note(release_notes)
     '''
     release_inst.notes = release_notes
     '''
@@ -83,11 +84,19 @@ def release_cli(channel, release_notes, force, no_remote, repo):
     '''
     click.echo('Tag: ', nl=False)
     click.secho(release_inst.ref_name, fg='yellow')
-    push_ok, stderr = git.push_tags()
+    push_ok, stderr = git.push_ref(release_inst.ref_name)
     if not push_ok:
         click.echo("Error pushing release tags: {0}".format(stderr))
         click.echo('This release will not be available until the tags are '
                    'pushed. You may be able to push the tags manually '
                    'with:\n\n'
-                   '  git push --tags')
+                   "  git push origin {0}".format(release_inst.ref_name))
+
+    push_ok, stderr = git.push_ref(git.NOTE_NS)
+    if not push_ok:
+        click.echo("Error pushing release notes: {0}".format(stderr))
+        click.echo('This release will not be available until the tags are '
+                   'pushed. You may be able to push the tags manually '
+                   'with:\n\n'
+                   "  git push origin {0}".format(git.NOTE_NS))
     click.echo('')

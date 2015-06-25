@@ -8,14 +8,17 @@ import click
 
 from . import utils
 
+NS = 'release'
+RELEASE_NS = "{ns}/{release}".format(ns=NS, release='{name}')
+TAG_NS = 'refs/tags/{name}'
+NOTE_NS = "refs/notes/{ns}".format(ns=NS)
+
+LOGGER = logging.getLogger(__name__)
+
+
 class NoTree(Exception):
     'No tree object found in the repo'
     pass
-
-RELEASE_NS = 'releases/{name}'
-TAG_NS = 'refs/tags/{name}'
-
-LOGGER = logging.getLogger(__name__)
 
 
 def log_cmd(cmd):
@@ -119,11 +122,11 @@ def delete_tag(name):
             click.echo(stderr)
 
 
-def push_tags():
+def push_ref(ref):
     'Push local tags to the remote'
     if not has_remote():
         return
-    push_tags_cmd = ['git', 'push', '--tags']
+    push_tags_cmd = ['git', 'push', 'origin', ref]
     log_cmd(push_tags_cmd)
     proc = subprocess.Popen(push_tags_cmd,
                             stdout=subprocess.PIPE,
@@ -131,7 +134,6 @@ def push_tags():
     if proc.wait() > 0:
         _, stderr = proc.communicate()
         return None, stderr
-    return True, None
 
 
 def status():
@@ -237,3 +239,10 @@ def checkout(commitish):
     if proc.wait() > 0:
         _, stderr = proc.communicate()
         raise Exception('check out error')
+
+
+def note(message):
+    'Add a note to the commit at HEAD'
+    note_cmd = ['git', 'notes', '--ref', NS, 'add', '-m', message]
+    log_cmd(note_cmd)
+    subprocess.check_call(note_cmd)
