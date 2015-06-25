@@ -8,21 +8,14 @@ import time
 
 from tags import git, utils
 
-
-def test_get_tag_list(function_repo):
-    'Can get a list of tags'
-    subprocess.check_call(['git', 'tag', 'a'])
-    subprocess.check_call(['git', 'tag', 'b'])
-    retval = git.get_tag_list()
-    assert retval == ['a', 'b']
-
+TAGS_GLOB = 'refs/tags/*'
 
 def test_create_tag(function_repo):
     'Can create a tag'
     subprocess.check_call(['git', 'tag', 'a'])
     subprocess.check_call(['git', 'tag', 'b'])
     git.create_tag('...', 'c')
-    retval = git.get_tag_list()
+    retval = git.refs_glob(TAGS_GLOB)
     assert retval == ['a', 'b', 'c']
 
 
@@ -39,9 +32,9 @@ def test_delete_tag(function_repo):
     subprocess.check_call(['git', 'tag', 'a'])
     subprocess.check_call(['git', 'tag', 'b'])
     git.create_tag('...', 'c')
-    assert git.get_tag_list() == ['a', 'b', 'c']
+    assert git.refs_glob(TAGS_GLOB) == ['a', 'b', 'c']
     git.delete_tag('c')
-    assert git.get_tag_list() == ['a', 'b']
+    assert subprocess.check_output(['git', 'tag']) == 'a\nb\n'
 
 
 def test_delete_tag_nonexistant(function_repo):
@@ -54,12 +47,12 @@ def test_push_tags(function_repo):
     subprocess.check_call(['git', 'tag', 'a'])
     subprocess.check_call(['git', 'tag', 'b'])
     git.create_tag('...', 'c')
-    assert git.list_tags() == ['a', 'b', 'c']
+    assert git.refs_glob(TAGS_GLOB) == ['a', 'b', 'c']
     git.push_tags()
     map(git.delete_tag, 'abc')
-    assert git.list_tags() == []
+    assert subprocess.check_output(['git', 'tag']) == ''
     # the function below pulls tags from the remote
-    assert git.get_tag_list() == ['a', 'b', 'c']
+    assert git.refs_glob(TAGS_GLOB) == ['a', 'b', 'c']
 
 
 def test_dirty_clean(function_repo):
@@ -97,17 +90,8 @@ def test_tag_refs(function_repo):
     tag = functools.partial(git.create_tag, '...')
     map(tag, x_tags)
     map(tag, y_tags)
-    assert set(git.tag_refs('x')) == set(x_tags)
-    assert set(git.tag_refs('y')) == set(y_tags)
-
-
-def test_sort_refs(function_repo):
-    'Can sort refs'
-    cmd = ['git', 'log', 'HEAD', '--format=%h']
-    map(function_repo.commit, ('abcxyz'))
-    refs = utils.filter_empty_lines(subprocess.check_output(cmd))
-    shuffled_refs = random.sample(refs, len(refs))
-    assert git.sort_refs(shuffled_refs) == refs
+    assert set(git.refs_glob('refs/tags/x/**')) == set(x_tags)
+    assert set(git.refs_glob('refs/tags/y/**')) == set(y_tags)
 
 
 @pytest.mark.parametrize('line,expected', (

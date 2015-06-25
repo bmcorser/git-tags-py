@@ -21,11 +21,10 @@ def create_temp_repo():
     old_dir = os.getcwd()
     repo_dir = tempfile.mkdtemp()
     os.chdir(repo_dir)
+    # set up remote
     os.mkdir('remote_repo')
     os.chdir('remote_repo')
     subprocess.check_call(['git', 'init'])
-    subprocess.check_call(['git', 'config', 'user.email', 'user@test'])
-    subprocess.check_call(['git', 'config', 'user.name', 'Test User'])
     global time
     time = 1329000000
 
@@ -41,7 +40,7 @@ def create_temp_repo():
 
     def commit(name):
         'Touch the deploy file in the named package and commit it'
-        path = os.path.join(name, 'deploy')
+        path = os.path.join(name, '.package')
         try:
             os.mkdir(name)
         except OSError as exc:

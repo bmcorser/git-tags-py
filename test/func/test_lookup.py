@@ -2,18 +2,18 @@
 from __future__ import unicode_literals
 from click.testing import CliRunner
 import tags
-import os
-import subprocess
+import yaml
+import uuid
 
 
 def test_cli_lookup_yaml(function_repo):
     'Can lookup the latest a package release by name'
-    map(function_repo.commit, ('a', 'b'))
+    packages = (uuid.uuid4().hex, uuid.uuid4().hex)
+    map(function_repo.commit, packages)
     runner = CliRunner()
-    # update package 'a'
-    function_repo.commit('a')
-    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()[:7]
-    # release package 'b'
-    print(runner.invoke(tags.cli.command_group, ['release','b', '-m', 'a']).output)
-    result = runner.invoke(tags.cli.command_group, ['lookup', 'b', '--yaml'])
-    assert commit in result.output
+    map(function_repo.commit, packages)
+    print(runner.invoke(tags.cli.command_group, ['release', '-m', 'a']).output)
+    result = runner.invoke(tags.cli.command_group, ['lookup', 'development'])
+    changed = yaml.load(result.output)['body']['packages']['changed']
+    for package in packages:
+        assert package in changed

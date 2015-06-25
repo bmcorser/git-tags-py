@@ -144,6 +144,7 @@ def status():
 def refs_glob(glob):
     'Return the short refs of tags in the passed namespace'
     '%(refname:short): %(objectname:short)',
+    fetch()
     cmd = [
         'git',
         'for-each-ref',
