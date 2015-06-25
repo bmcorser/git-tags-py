@@ -31,71 +31,83 @@ class Release(object):
     def __init__(self, repo_path, channel):
         if not channel:
             raise Exception('Must provide a channel to release on')
+        head = git.head_abbrev()
+        repo_root = git.repo_root(repo_path)
+        self.lookup = lookup.Lookup(repo_root, head, channel)
+
+        history = self.lookup.releases()
+        if history:
+            number = int(history[0].split('/')[-1]) + 1
+        else:
+            number = 1
+
+        self.ref_name = git.release_tag(channel, number)
+        self.number = number
         self.channel = channel
-        self.repo_path = repo_path
+        self.target = head
 
         self._packages = None
-        self._changed_packages = None
-        self._number = None
+        self._diff = None
         self._channel_releases = None
-
-    @property
-    def number(self):
-        if not self._number:
-            channel_releases = lookup.channel_releases(self.channel)
-            if channel_releases:
-                self._number = int(channel_releases[0].split('/')[-1]) + 1
-            else:
-                self._number = 1
-        return self._number
 
     @property
     def packages(self):
         if not self._packages:
-            ret_dict = {}
-            for name in lookup.packages(self.repo_path).keys():
-                ret_dict[name] = git.path_tree(name)
-            self._packages = ret_dict
+            self._packages = self.lookup.packages(self.target)
         return self._packages
 
     @property
-    def changed_packages(self):
-        if not self._changed_packages:
-            ret_dict = {}
-            released = lookup.channel_releases(self.channel)
+    def diff(self):
+        'Look up package changes'
+        if not self._diff:
+            diff_ = {
+                'changed': {},
+                'unchanged': {},
+            }
+            released = self.lookup.latest()
             if not released:
-                return self.packages
+                diff_['changed'] = self.packages
+            else:
+                released_pkgs = {}
+                for name in ['changed', 'unchanged']:
+                    released_pkgs.update(released['body']['packages'][name])
+                for name, tree in self.packages.items():
+                    if name not in released_pkgs:
+                        diff_['changed'][name] = tree
+                        continue
+                    if tree == released_pkgs[name]:
+                        diff_['unchanged'][name] = tree
+                    else:
+                        diff_['changed'][name] = tree
+            self._diff = diff_
+        return self._diff
 
-            def look_back(name):
-                for ref in released:
-                    tree = git.tag_dict(ref)['body'].get(name)
-                    if tree:
-                        return tree
+    @property
+    def changed(self):
+        'Which packages changed since the last release'
+        return self.diff['changed']
 
-            previous_release = git.tag_dict(released[0])['body']
-
-            for name, tree in self.packages.items():
-                if name not in previous_release:
-                    last_tree = look_back(name)
-                else:
-                    last_tree = previous_release[name]
-
-                if tree != last_tree:
-                    ret_dict[name] = tree
-            self._changed_packages = ret_dict
-        return self._changed_packages
+    @property
+    def unchanged(self):
+        'Which packages remain unchanged since the last release'
+        return self.diff['unchanged']
 
     def create_tag(self):
         'Create the required tags for this release'
         try:
-            ref = "releases/{0}/{1}".format(self.channel, self.number)
-            git.create_tag(yaml.dump(self.changed_packages, default_flow_style=False), ref)
+            body_dict = {
+                'packages': {
+                    'changed': self.changed,
+                    'unchanged': self.unchanged,
+                }
+            }
+            git.create_tag(yaml.dump(body_dict, default_flow_style=False),
+                           self.ref_name)
         except git.TagError as err_tag:
             fmt_error = "ERROR: Could not create tag {0}".format(err_tag)
             click.secho(fmt_error, fg='red', bold=True)
             click.secho('Attempting to clean up ...', fg='yellow')
-            for tag in self.new_tags:
-                git.delete_tag(tag)
+            git.delete_tag(ref_name)
             click.echo('Bye.')
             exit(os.EX_CANTCREAT)
 

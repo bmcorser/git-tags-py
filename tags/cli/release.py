@@ -53,7 +53,7 @@ def release_cli(channel, release_notes, force, no_remote, repo):
         printing.error(messages.release_repo_dirty)
         exit(os.EX_USAGE)
     release_inst = release_cls.Release(repo, channel)
-    if not release_inst.changed_packages:
+    if not release_inst.changed:
         printing.error('No packages changed, nothing to release')
         exit(os.EX_DATAERR)
     if not release_notes:
@@ -66,23 +66,23 @@ def release_cli(channel, release_notes, force, no_remote, repo):
     release_inst.notes = release_notes
     '''
     release_inst.create_tag()
+    click.echo('')
+    click.echo('Release ', nl=False)
+    click.secho("#{0} ".format(release_inst.number), fg='green', nl=False)
+    click.echo('on channel', nl=False)
+    click.secho(" {0}".format(release_inst.channel), fg='cyan')
+    click.echo('')
+    click.echo('Included:')
+    for path, tree in release_inst.changed.items():
+        click.echo("  {0} ".format(path))
+    click.echo('')
     '''
-    click.echo('Release notes:')
+    click.echo('Notes:')
     for line in release_notes.split('\n'):
         click.echo('  ' + line)
-    if release_inst.alias:
-        click.echo('Release alias:')
-        click.secho('  ' + alias, fg='green')
-        click.echo('Packages in this alias:')
-        click.echo('  ' + ' '.join(lookup.alias_pkgs(release_inst.alias)))
-    else:
-        click.echo('Release name:')
-        click.secho('  ' + release_inst.commit, fg='green')
-        click.echo('Packages included in this release:')
-        click.echo('  ' + ' '.join(release_inst.pkgs))
-    click.echo('Tags created:')
-    for tag in release_inst.new_tags:
-        click.secho('  ' + tag, fg='yellow')
+    '''
+    click.echo('Tag: ', nl=False)
+    click.secho(release_inst.ref_name, fg='yellow')
     push_ok, stderr = git.push_tags()
     if not push_ok:
         click.echo("Error pushing release tags: {0}".format(stderr))
@@ -90,5 +90,4 @@ def release_cli(channel, release_notes, force, no_remote, repo):
                    'pushed. You may be able to push the tags manually '
                    'with:\n\n'
                    '  git push --tags')
-    '''
-    click.echo('Bye.')
+    click.echo('')

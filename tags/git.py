@@ -8,9 +8,12 @@ import click
 
 from . import utils
 
-FMT_NS = 'releases/{release}'
-FMT_TAG = FMT_NS.format(release='{pkg}/{commit}')
-FMT_TAG_ALIAS = FMT_NS.format(release='{alias}/{pkg}/{commit}')
+class NoTree(Exception):
+    'No tree object found in the repo'
+    pass
+
+RELEASE_NS = 'releases/{name}'
+TAG_NS = 'refs/tags/{name}'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,9 +23,32 @@ def log_cmd(cmd):
     LOGGER.debug("Invoking {cmd}".format(cmd=' '.join(cmd)))
 
 
+def release_tag(channel, number=None):
+    'Return either a release tag or channel glob'
+    if number:
+        name = "{channel}/{number}".format(channel=channel, number=number)
+    else:
+        name = "{channel}/*".format(channel=channel)
+    return RELEASE_NS.format(name=name)
+
+
+def release_ref(channel, number=None):
+    'Return either a full ref or channel glob'
+    tag_name = release_tag(channel, number)
+    return TAG_NS.format(name=tag_name)
+
+
 class TagError(Exception):
     'Tell someone a tag exists'
     pass
+
+
+def repo_root(repo_path):
+    'Get the root directory of a repository'
+    root_cmd = ['git', 'rev-parse', '--show-toplevel']
+    log_cmd(root_cmd)
+    output = subprocess.check_output(root_cmd)
+    return output.strip()
 
 
 def has_remote():
@@ -40,7 +66,7 @@ def head_abbrev(directory=None):
 
     Note: The abbreviated hash can be of variable length.
     '''
-    cmd = ['git', 'rev-list', '-1', 'HEAD', '--abbrev-commit']
+    cmd = ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
     log_cmd(cmd)
     if directory:
         cmd.extend(['--', directory])
@@ -115,7 +141,7 @@ def status():
     return subprocess.check_output(cmd)
 
 
-def channel_refs(channel):
+def refs_glob(glob):
     'Return the short refs of tags in the passed namespace'
     '%(refname:short): %(objectname:short)',
     cmd = [
@@ -123,7 +149,7 @@ def channel_refs(channel):
         'for-each-ref',
         '--format',
         '%(refname:short)',
-        "refs/tags/releases/{0}/*".format(channel),
+        glob
     ]
     log_cmd(cmd)
     return utils.filter_empty_lines(subprocess.check_output(cmd))
@@ -188,12 +214,16 @@ def recurse_tree(root, remaining):
     for _, git_type, oid, name in map(string.split, cat_file(root)):
         if name == remaining[0]:
             return recurse_tree(oid, remaining[1:])
+    raise NoTree()
 
 
 def path_tree(path):
     'Get the object ID for the directory at `path`'
     root = cat_file('HEAD')[0].split()[1]
-    return recurse_tree(root, path.split('/'))
+    try:
+        return recurse_tree(root, path.split('/'))
+    except NoTree:
+        raise NoTree("No tree found for path: {0}".format(path))
 
 
 def checkout(commitish):

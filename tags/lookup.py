@@ -1,86 +1,52 @@
 import os
-import collections
-import yaml
 from . import git
 
 
-class ReleaseLookupException(Exception):
-    pass
+class Lookup(object):
+    '''
+    Do release lookups for in the passed repository and channel, leaving that
+    repo at `head` when done
+    '''
 
-class PackageNotFound(ReleaseLookupException):
-    pass
+    def __init__(self, repo_root, head, channel):
+        self.repo_root = repo_root
+        self.head = head
+        self.channel = channel
 
-class CommitNotFound(ReleaseLookupException):
-    pass
+    def releases(self):
+        'Return a sorted list of releases in this channel, latest first'
+        glob = git.release_ref(self.channel)
+        refs = git.refs_glob(glob)
+        if not len(refs):
+            return None
+        refs.sort(reverse=True, key=lambda ref: int(ref.split('/')[-1]))
+        return refs
 
-class AliasNotFound(ReleaseLookupException):
-    pass
+    def packages(self, ref):
+        'Get a list of packages defined at the passed commit'
+        git.checkout(ref)
+        ret_dict = {}
+        not_git = filter(lambda path: '.git' not in path,
+                         os.listdir(self.repo_root))
+        for top_entry in not_git:
+            for path, _, files in os.walk(top_entry):
+                if '.package' in files:
+                    if any([path.startswith(seen) for seen in ret_dict.keys()]):
+                        msg = "Nested packages not allowed: {0}"
+                        raise Exception(msg.format(path))
+                    rel_path = os.path.relpath(path)
+                    ret_dict[rel_path] = git.path_tree(rel_path)
+        git.checkout(self.head)
+        return ret_dict
 
+    def latest(self):
+        refs = self.releases()
+        if not refs:
+            return None
+        return git.tag_dict(refs[0])
 
-def channel_releases(channel):
-    'Get data for the last release'
-    refs = git.channel_refs(channel)
-    if not len(refs):
-        return None
-    refs.sort(reverse=True, key=lambda ref: int(ref.split('/')[-1]))
-    return refs
-
-
-def packages(repo_path):
-    'Get a list of packages defined in the passed repository'
-    ret_dict = {}
-    not_git = filter(lambda path: '.git' not in path, os.listdir(repo_path))
-    for path_ in not_git:
-        for path, _, files in os.walk(path_):
-            if '.package' in files:
-                if any([path.startswith(seen) for seen in ret_dict.keys()]):
-                    msg = "Nested packages not allowed: {0}"
-                    raise Exception(msg.format(path))
-                rel_path = os.path.relpath(path)
-                ret_dict[rel_path] = git.path_tree(rel_path)
-    return ret_dict
-
-
-def channel_latest(channel):
-    refs = channel_releases(channel)
-
-    def look_back(name):
-        'Iterate through historic releases until we find our package'
-        for ref in refs:
-            tree = git.tag_dict(ref)['body'].get(name)
-            if tree:
-                return tree
-    git.checkout(refs[0])
-    ret_dict = {}
-    previous_release = git.tag_dict(refs[0])['body']
-    for name, attrs in packages('.').items():
-        if name not in previous_release:
-            tree = look_back(name)
-        else:
-            tree = previous_release[name]
-        ret_dict[name] = tree
-    return ret_dict
-
-def channel_release(channel, number):
-    ref = "releases/{0}/{1}".format(channel, number)
-    git.checkout(ref)
-    release = git.tag_dict(ref)
-    global _refs
-    _refs = None
-    def look_back(name):
-        'Iterate through historic releases until we find our package'
-        global _refs
-        if not _refs:
-            _refs = channel_releases(channel)
-        for ref in _refs:
-            tree = git.tag_dict(ref)['body'].get(name)
-            if tree:
-                return tree
-    ret_dict = {}
-    for name, attrs in packages('.').items():
-        if name not in release:
-            tree = look_back(name)
-        else:
-            tree = release[name]
-        ret_dict[name] = tree
-    return ret_dict
+    def release(self, number):
+        'Return the release for this channel at the number specified'
+        ref = git.release_tag(self.channel, number)
+        release_dict = git.tag_dict(ref)
+        return release_dict
