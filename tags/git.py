@@ -134,6 +134,7 @@ def push_ref(ref):
     if proc.wait() > 0:
         _, stderr = proc.communicate()
         return None, stderr
+    return True, None
 
 
 def status():
