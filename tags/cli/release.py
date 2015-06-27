@@ -6,7 +6,6 @@ import os
 import click
 
 from .. import git
-from .. import lookup
 from .. import release as release_cls
 from .. import utils as utils
 
@@ -43,10 +42,9 @@ def release_cli(channel, release_notes, force, no_remote, repo):
 
         tag release -c production
     '''
-    os.chdir(repo)  # for subprocess calls to git
     if no_remote:
-        git.has_remote = lambda: False
-    status = git.status()
+        git.Repo.has_remote = lambda: False
+    status = repo.status()
     if bool(status) and not force:
         click.echo()
         printing.print_status(status)
@@ -62,11 +60,8 @@ def release_cli(channel, release_notes, force, no_remote, repo):
             click.echo('Release notes are required')
             click.echo('Bye.')
             exit(os.EX_NOINPUT)
-    git.note(release_notes)
-    '''
-    release_inst.notes = release_notes
-    '''
     release_inst.create_tag()
+    repo.append_note(release_notes, release_inst)
     click.echo('')
     click.echo('Release ', nl=False)
     click.secho("#{0} ".format(release_inst.number), fg='green', nl=False)
@@ -77,14 +72,9 @@ def release_cli(channel, release_notes, force, no_remote, repo):
     for path, tree in release_inst.changed.items():
         click.echo("  {0} ".format(path))
     click.echo('')
-    '''
-    click.echo('Notes:')
-    for line in release_notes.split('\n'):
-        click.echo('  ' + line)
-    '''
     click.echo('Tag: ', nl=False)
     click.secho(release_inst.ref_name, fg='yellow')
-    push_ok, stderr = git.push_ref(release_inst.ref_name)
+    push_ok, stderr = repo.push_ref(release_inst.ref_name)
     if not push_ok:
         click.echo("Error pushing release tags: {0}".format(stderr))
         click.echo('This release will not be available until the tags are '
@@ -92,11 +82,12 @@ def release_cli(channel, release_notes, force, no_remote, repo):
                    'with:\n\n'
                    "  git push origin {0}".format(release_inst.ref_name))
 
-    push_ok, stderr = git.push_ref(git.NOTE_NS)
+    notes_ref = git.REF_NS.format(kind='notes', name=git.NS)
+    push_ok, stderr = repo.push_ref(notes_ref)
     if not push_ok:
         click.echo("Error pushing release notes: {0}".format(stderr))
         click.echo('This release will not be available until the tags are '
                    'pushed. You may be able to push the tags manually '
                    'with:\n\n'
-                   "  git push origin {0}".format(git.NOTE_NS))
+                   "  git push origin {0}".format(notes_ref))
     click.echo('')

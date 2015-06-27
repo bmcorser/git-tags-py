@@ -9,11 +9,9 @@ import click
 from . import utils
 
 NS = 'release'
-RELEASE_NS = "{ns}/{release}".format(ns=NS, release='{name}')
-TAG_NS = 'refs/tags/{name}'
-NOTE_NS = "refs/notes/{ns}".format(ns=NS)
-
-LOGGER = logging.getLogger(__name__)
+TAG_FMT = '{channel}/{number}'
+TAG_NS = '{ns}/{tag}'
+REF_NS = 'refs/{kind}/{name}'
 
 
 class NoTree(Exception):
@@ -21,173 +19,22 @@ class NoTree(Exception):
     pass
 
 
-def log_cmd(cmd):
-    'Log the invocation of a command'
-    LOGGER.debug("Invoking {cmd}".format(cmd=' '.join(cmd)))
-
-
-def release_tag(channel, number=None):
-    'Return either a release tag or channel glob'
-    if number:
-        name = "{channel}/{number}".format(channel=channel, number=number)
-    else:
-        name = "{channel}/*".format(channel=channel)
-    return RELEASE_NS.format(name=name)
-
-
-def release_ref(channel, number=None):
-    'Return either a full ref or channel glob'
-    tag_name = release_tag(channel, number)
-    return TAG_NS.format(name=tag_name)
-
-
 class TagError(Exception):
     'Tell someone a tag exists'
     pass
 
 
-def repo_root(repo_path):
-    'Get the root directory of a repository'
-    root_cmd = ['git', 'rev-parse', '--show-toplevel']
-    log_cmd(root_cmd)
-    output = subprocess.check_output(root_cmd)
-    return output.strip()
+def release_tag(channel, number=None):
+    'Return either a release tag or channel glob'
+    if number:
+        tag = TAG_FMT.format(channel=channel, number=number)
+    else:
+        tag = TAG_FMT.format(channel=channel, number='*')
+    return TAG_NS.format(ns=NS, tag=tag)
 
-
-def has_remote():
-    'Test if repo has a remote defined'
-    remote_cmd = ['git', 'remote']
-    log_cmd(remote_cmd)
-    output = subprocess.check_output(remote_cmd)
-    return bool(utils.filter_empty_lines(output))
-
-
-def head_abbrev(directory=None):
-    '''
-    Return the unambiguous abbreviated sha1 hash of the commit at HEAD,
-    optionally for a directory.
-
-    Note: The abbreviated hash can be of variable length.
-    '''
-    cmd = ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
-    log_cmd(cmd)
-    if directory:
-        cmd.extend(['--', directory])
-    return utils.filter_empty_lines(subprocess.check_output(cmd))[0]
-
-
-def fetch():
-    'Fetch tags and commits'
-    if not has_remote():
-        return
-    fetch_cmd = ['git', 'fetch']
-    log_cmd(fetch_cmd)
-    subprocess.check_call(fetch_cmd)
-    fetch_tags_cmd = ['git', 'fetch', '--tags']
-    log_cmd(fetch_tags_cmd)
-    subprocess.check_call(fetch_tags_cmd)
-
-
-def create_tag(message, name):
-    'Create a tag with the passed name and message (default user)'
-    cmd = ['git', 'tag', '-a', name, '-m', message]
-    log_cmd(cmd)
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    if proc.wait() > 0:
-        _, stderr = proc.communicate()
-        if 'unable to resolve ref' in stderr or 'still refs under' in stderr:
-            click.echo('Did you use a package name as an alias?')
-            raise TagError(name)
-        else:
-            raise TagError(name)
-
-
-def delete_tag(name):
-    '''
-    Try to delete the named tag, echo stderr if it fails for any other reason
-    save for the tag not existing.
-    '''
-    cmd = ['git', 'tag', '-d', name]
-    log_cmd(cmd)
-    proc = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    if proc.wait() > 0:
-        _, stderr = proc.communicate()
-        if 'not found' in stderr:
-            pass
-        else:
-            click.echo(stderr)
-
-
-def push_ref(ref):
-    'Push local tags to the remote'
-    if not has_remote():
-        return
-    push_tags_cmd = ['git', 'push', 'origin', ref]
-    log_cmd(push_tags_cmd)
-    proc = subprocess.Popen(push_tags_cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    if proc.wait() > 0:
-        _, stderr = proc.communicate()
-        return None, stderr
-    return True, None
-
-
-def status():
-    'Return True if there are untracked, unstaged or uncommitted files present'
-    cmd = ['git', 'status', '--porcelain']
-    log_cmd(cmd)
-    return subprocess.check_output(cmd)
-
-
-def refs_glob(glob):
-    'Return the short refs of tags in the passed namespace'
-    '%(refname:short): %(objectname:short)',
-    fetch()
-    cmd = [
-        'git',
-        'for-each-ref',
-        '--format',
-        '%(refname:short)',
-        glob
-    ]
-    log_cmd(cmd)
-    return utils.filter_empty_lines(subprocess.check_output(cmd))
-
-
-def cat_file(ref):
-    'Call cat-file -p on the ref passed'
-    cmd = ['git', 'cat-file', '-p', ref]
-    log_cmd(cmd)
-    return utils.filter_empty_lines(subprocess.check_output(cmd))
-
-
-def tagger_line_tokens(tokens):
-    'Return the tagger name, email, time and timezone for a tagger line'
-    for index, token in enumerate(tokens[1:]):
-        if '<' in token and '>' in token:
-            e_ix = index + 1  # email position
-            break
-    return (' '.join(tokens[1:e_ix]),) + tuple(tokens[e_ix:])
-
-
-def tag_dict(tag):
-    'Return the contents of a tag as a dictionary'
-    contents = cat_file(tag)
-    tagger, email, time, timezone = tagger_line_tokens(contents[3].split(' '))
-    body = yaml.load('\n'.join(contents[4:]))
-    return {
-        'tag': tag,
-        'tagger_name': tagger,
-        'tagger_email': email.strip('<>'),
-        'time': time,
-        'timezone': timezone,
-        'body': body
-    }
+def release_number(ref):
+    'Extract the number for a release from a tag name'
+    return int(ref.split('/')[-1])
 
 
 def is_repo(repo_dir):
@@ -200,50 +47,185 @@ def is_repo(repo_dir):
     return False
 
 
-def attrs_dict(directory):
-    'Return the attributes for a directory as a dict'
-    attr_cmd = ['git', 'check-attr', '-a', directory]
-    log_cmd(attr_cmd)
-    output = subprocess.check_output(attr_cmd)
-    ret_dict = {}
-    for line in utils.filter_empty_lines(output):
-        _, name, value = line.split(': ')
-        ret_dict[name] = value
-    return ret_dict
+def release_ref(channel, number=None):
+    'Return either a full ref or channel glob'
+    name = release_tag(channel, number)
+    return REF_NS.format(kind='tags', name=name)
 
 
-def recurse_tree(root, remaining):
-    if not len(remaining):
-        return root
-    for _, git_type, oid, name in map(string.split, cat_file(root)):
-        if name == remaining[0]:
-            return recurse_tree(oid, remaining[1:])
-    raise NoTree()
+def tagger_line_tokens(tokens):
+    'Return the tagger name, email, time and timezone for a tagger line'
+    for index, token in enumerate(tokens[1:]):
+        if '<' in token and '>' in token:
+            e_ix = index + 1  # email position
+            break
+    return (' '.join(tokens[1:e_ix]),) + tuple(tokens[e_ix:])
 
 
-def path_tree(path):
-    'Get the object ID for the directory at `path`'
-    root = cat_file('HEAD')[0].split()[1]
-    try:
-        return recurse_tree(root, path.split('/'))
-    except NoTree:
-        raise NoTree("No tree found for path: {0}".format(path))
+def log_cmd(cmd):
+    'Log the invocation of a command'
+    LOGGER.info("Invoking {cmd}".format(cmd=' '.join(cmd)))
 
 
-def checkout(commitish):
-    'Check out the commitish'
-    checkout_cmd = ['git', 'checkout', commitish]
-    log_cmd(checkout_cmd)
-    proc = subprocess.Popen(checkout_cmd,
+def run(directory, git_subcommand):
+    '''
+    Start a process to run the passed git subcommand in the passed directory
+    Returns the return code and formatted output in a tuple nest like this:
+
+        (returncode, (out, err))
+
+    '''
+    proc = subprocess.Popen(['git'] + git_subcommand,
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    if proc.wait() > 0:
-        _, stderr = proc.communicate()
-        raise Exception('check out error')
+                            stderr=subprocess.PIPE,
+                            cwd=directory)
+    retcode = proc.wait()
+    return retcode, map(utils.filter_empty_lines, proc.communicate())
 
 
-def note(message):
-    'Add a note to the commit at HEAD'
-    note_cmd = ['git', 'notes', '--ref', NS, 'add', '-m', message]
-    log_cmd(note_cmd)
-    subprocess.check_call(note_cmd)
+class Repo(object):
+
+    def __init__(self, directory):
+        root_cmd = ['rev-parse', '--show-toplevel']
+        retcode, (out, err) = run(directory, root_cmd)
+        if retcode > 0:
+            raise Exception('Not a repo?')
+        self.root = out[0]
+        self.start_head = self.head_abbrev()
+
+    def run(self, cmd):
+        'Run a git command in this repo, just closes self.root'
+        return run(self.root, cmd)
+
+    def has_remote(self):
+        'Test if repo has a remote defined'
+        retcode, (out, err) = self.run(['remote'])
+        return bool(out)
+
+    def head_abbrev(self):
+        '''
+        Return the unambiguous abbreviated sha1 hash of the commit at HEAD,
+        optionally for a directory.
+
+        Note: The abbreviated hash can be of variable length.
+        '''
+        retcode, (out, err) = self.run(['rev-parse', '--abbrev-ref', 'HEAD'])
+        return out[0]
+
+    def fetch(self):
+        'Fetch tags and commits'
+        if not self.has_remote():
+            return
+        self.run(['fetch'])
+        self.run(['fetch', '--tags'])
+
+    def create_tag(self, message, name):
+        'Create a tag with the passed name and message (default user)'
+        retcode, (out, err) = self.run(['tag', '-a', name, '-m', message])
+        if retcode > 0:
+            if 'unable to resolve ref' in err or 'still refs under' in err:
+                click.echo('Did you use a package name as an alias?')
+                raise TagError(name)
+            else:
+                raise TagError(name)
+
+    def delete_tag(self, name):
+        '''
+        Try to delete the named tag, echo stderr if it fails for any other
+        reason save for the tag not existing.
+        '''
+        retcode, (out, err) = self.run(['git', 'tag', '-d', name])
+        if retcode > 0:
+            if 'not found' in err:
+                pass
+            else:
+                click.echo(err)
+
+    def push_ref(self, ref):
+        'Push local tags to the remote'
+        if not self.has_remote():
+            return
+        retcode, (out, err) = self.run(['push', 'origin', ref])
+        if retcode:
+            return None, err
+        return True, None
+
+    def status(self):
+        'Return True if there are untracked, unstaged or uncommitted files present'
+        retcode, (out, err) = self.run(['status', '--porcelain'])
+        return out
+
+    def refs_glob(self, glob):
+        'Return the short refs of tags in the passed namespace'
+        '%(refname:short): %(objectname:short)',
+        fmt = '%(refname:short)'
+        self.fetch()
+        retcode, (out, err) = self.run(['for-each-ref', '--format', fmt, glob])
+        return out
+
+    def cat_file(self, ref):
+        'Call cat-file -p on the ref passed'
+        retcode, (out, err) = self.run(['cat-file', '-p', ref])
+        return out
+
+    def tag_dict(self, tag):
+        'Return the contents of a tag as a dictionary'
+        contents = self.cat_file(tag)
+        split_contents = contents[3].split(' ')
+        tagger, email, time, timezone = tagger_line_tokens(split_contents)
+        body = yaml.load('\n'.join(contents[4:]))
+        return {
+            'tag': tag,
+            'tagger_name': tagger,
+            'tagger_email': email.strip('<>'),
+            'time': time,
+            'timezone': timezone,
+            'body': body
+        }
+
+    def _recurse_tree(self, root, remaining):
+        if not len(remaining):
+            return root
+        for _, git_type, oid, name in map(string.split, self.cat_file(root)):
+            if name == remaining[0]:
+                return self._recurse_tree(oid, remaining[1:])
+        raise NoTree()
+
+    def path_tree(self, path):
+        'Get the object ID for the directory at `path`'
+        root = self.cat_file('HEAD')[0].split()[1]
+        try:
+            return self._recurse_tree(root, path.split('/'))
+        except NoTree:
+            raise NoTree("No tree found for path: {0}".format(path))
+
+    def checkout(self, commitish=None):
+        'Check out the commitish'
+        if not commitish:
+            commitish = self.start_head
+        retcode, (out, err) = self.run(['checkout', commitish])
+        if retcode > 0:
+            raise Exception('Error whilst checking out')
+
+    def show_note(self, release):
+        'Show notes for a release'
+        self.checkout(release.ref_name)
+        cmd = ['notes', '--ref', NS, 'show']
+        retcode, (note, err) = self.run(cmd)
+        self.checkout()
+        note = yaml.load('\n'.join(note))
+        return note[release.channel][release.number]
+
+    def append_note(self, message, release):
+        'Add a note to the commit at HEAD'
+        note_dict = {str(release.channel): {release.number: str(message)}}
+        cmd = ['notes', '--ref', NS, 'show']
+        retcode, (existing_note, err) = self.run(cmd)
+        if retcode > 0 and 'No note found' in err[0]:
+            cmd = ['notes', '--ref', NS, 'add', '-m', yaml.dump(note_dict, default_flow_style=False)]
+            retcode, (out, err) = self.run(cmd)
+        else:
+            existing_note = yaml.load('\n'.join(existing_note))
+            existing_note.update(note_dict)
+            cmd = ['notes', '--ref', NS, 'add', '-f', '-m', yaml.dump(existing_note, default_flow_style=False)]
+            retcode, (out, err) = self.run(cmd)
