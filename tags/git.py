@@ -32,6 +32,7 @@ def release_tag(channel, number=None):
         tag = TAG_FMT.format(channel=channel, number='*')
     return TAG_NS.format(ns=NS, tag=tag)
 
+
 def release_number(ref):
     'Extract the number for a release from a tag name'
     return int(ref.split('/')[-1])
@@ -60,11 +61,6 @@ def tagger_line_tokens(tokens):
             e_ix = index + 1  # email position
             break
     return (' '.join(tokens[1:e_ix]),) + tuple(tokens[e_ix:])
-
-
-def log_cmd(cmd):
-    'Log the invocation of a command'
-    LOGGER.info("Invoking {cmd}".format(cmd=' '.join(cmd)))
 
 
 def run(directory, git_subcommand):

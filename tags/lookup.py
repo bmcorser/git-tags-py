@@ -44,12 +44,12 @@ class Lookup(object):
         not_git = filter(lambda path: '.git' not in path,
                          os.listdir(self.repo.root))
         for top_entry in not_git:
-            for path, _, files in os.walk(top_entry):
+            for path, _, files in os.walk(os.path.join(self.repo.root, top_entry)):
                 if '.package' in files:
                     if any([path.startswith(seen) for seen in ret_dict.keys()]):
                         msg = "Nested packages not allowed: {0}"
                         raise Exception(msg.format(path))
-                    rel_path = os.path.relpath(path)
+                    rel_path = os.path.relpath(path, self.repo.root)
                     ret_dict[rel_path] = self.repo.path_tree(rel_path)
         self.repo.checkout(self.repo.start_head)
         return ret_dict

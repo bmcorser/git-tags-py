@@ -15,7 +15,7 @@ from .. import git
 @click.argument('channel')
 @click.argument('number', required=False)
 @click.option('--yaml', '-y', 'yaml_out', help='Output release data as YAML')
-@click.option('--repo', callback=main.validate_repo,
+@click.option('--repo', '-r', callback=main.validate_repo,
               help='Specify repository, defaults to the cwd')
 def lookup_cli(channel, number, yaml_out, repo):
     'Get the latest release name(s)'
@@ -35,6 +35,7 @@ def lookup_cli(channel, number, yaml_out, repo):
         pkgs = historic.data['body']['packages']
         for path, tree in pkgs['changed'].items():
             click.echo("  {0} ".format(path))
+        click.echo('')
         if pkgs['unchanged']:
             click.echo('Unchanged:')
             for path, tree in pkgs['unchanged'].items():

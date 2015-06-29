@@ -15,9 +15,23 @@ from . import notes
 from . import printing
 
 
+def validate_channel(ctx, param, value):
+    'If no channel is passed, check env for value, if nothing’s there, raise'
+    if value:
+        if os.path.sep in value:
+            raise click.BadParameter('Channel names may not contain path separator')
+        return value
+    env_channel = os.environ.get('GIT_TAGS_PY_CHANNEL')
+    if env_channel is None:
+        raise click.BadParameter('Either pass a channel or set '
+                                 'GIT_TAGS_PY_CHANNEL to the name of the '
+                                 'channel you wish to release on by default.')
+    return env_channel
+
+
 @main.command_group.command(name='release')
-@click.option('--channel', '-c', default='development', help='Release channel,'
-              ' defaults to development')
+@click.option('--channel', '-c', callback=validate_channel,
+              help='Release channel, defaults to GIT_TAGS_PY_CHANNEL')
 @click.option('--release-notes', '-m', default=None,
               help='Tell others what this release is. If this option is not '
                    'supplied on the command line, $EDITOR will be used to '
