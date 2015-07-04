@@ -1,20 +1,18 @@
 # coding: utf-8
 from __future__ import unicode_literals
 
-import os
-import pprint
-
 import click
+import yaml
 
 from .. import lookup
 from . import main
-from .. import git
 
 
 @main.command_group.command(name='lookup')
 @click.argument('channel')
 @click.argument('number', required=False)
-@click.option('--yaml', '-y', 'yaml_out', help='Output release data as YAML')
+@click.option('--yaml', '-y', 'yaml_out', is_flag=True,
+              help='Output release data as YAML')
 @click.option('--repo', '-r', callback=main.validate_repo,
               help='Specify repository, defaults to the cwd')
 def lookup_cli(channel, number, yaml_out, repo):
@@ -44,3 +42,5 @@ def lookup_cli(channel, number, yaml_out, repo):
         click.echo('Notes:')
         click.echo(repo.show_note(historic))
         click.echo('')
+    else:
+        print(yaml.dump(historic.data))
