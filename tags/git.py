@@ -63,7 +63,7 @@ def tagger_line_tokens(tokens):
     return (' '.join(tokens[1:e_ix]),) + tuple(tokens[e_ix:])
 
 
-def run(directory, git_subcommand):
+def run(directory, git_subcommand, **popen_kwargs):
     '''
     Start a process to run the passed git subcommand in the passed directory
     Returns the return code and formatted output in a tuple nest like this:
@@ -74,7 +74,8 @@ def run(directory, git_subcommand):
     proc = subprocess.Popen(['git'] + git_subcommand,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
-                            cwd=directory)
+                            cwd=directory,
+                            **popen_kwargs)
     retcode = proc.wait()
     return retcode, map(utils.filter_empty_lines, proc.communicate())
 

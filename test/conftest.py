@@ -1,3 +1,4 @@
+# coding: utf-8
 import pytest
 
 import collections
@@ -6,7 +7,9 @@ import os
 import tempfile
 import traceback
 import shutil
-import subprocess
+import uuid
+
+from tags import git
 
 
 @pytest.fixture(scope='session')
@@ -18,58 +21,65 @@ def utils():
 
 
 def create_temp_repo():
-    old_dir = os.getcwd()
-    repo_dir = tempfile.mkdtemp()
-    os.chdir(repo_dir)
+    root_dir = tempfile.mkdtemp()
     # set up remote
-    os.mkdir('remote_repo')
-    os.chdir('remote_repo')
-    subprocess.check_call(['git', 'init'])
+    remote = os.path.join(root_dir, 'remote_repo')
+    os.mkdir(remote)
+    git.run(remote, ['init', '--bare'])
+
+    # set up local
+    local = os.path.join(root_dir, 'local_repo')
+    os.mkdir(local)
+    git.run(root_dir, ['clone', remote, local])
+    user_name = 'Tarquin Tagger'
+    user_email = 'tarquin@tagger.com'
+    git.run(local, ['config', 'user.name', user_name])
+    git.run(local, ['config', 'user.email', user_email])
+
+    # set up time-related things
     global time
     time = 1329000000
 
-    def inc_time():
+    def incr_time():
+        'Increment the time that Git knows about'
         global time
         time += 100
-        os.environ['GIT_COMMITTER_DATE'] = "{0} +0000".format(time)
-        os.environ['GIT_AUTHOR_DATE'] = "{0} +0000".format(time)
+        return {
+            'GIT_COMMITTER_DATE': "{0} +0000".format(time),
+            'GIT_AUTHOR_DATE': "{0} +0000".format(time),
+        }
 
     def touch(path):
-        with open(path, 'w') as deploy_file:
-            deploy_file.write(str(time))
+        'Make a change to a file that Git will see'
+        with open(os.path.join(local, path), 'w') as package_marker:
+            package_marker.write(repr(uuid.uuid4()))
 
     def commit(name):
-        'Touch the deploy file in the named package and commit it'
-        path = os.path.join(name, '.package')
+        'Touch the package marker file in the named directory and commit it'
+        path = os.path.join(local, name, '.package')
         try:
-            os.mkdir(name)
+            os.mkdir(os.path.join(local, name))
         except OSError as exc:
             if exc.errno != 17:
                 raise
         touch(path)
-        subprocess.check_call(['git', 'add', name])
-        inc_time()
-        commit_return = subprocess.check_output(['git', 'commit', '-m', name])
-        return commit_return.split(' ')[1].strip(']'), copy.copy(time)
+        git.run(local, ['add', name])
+        retcode, (out, err) = git.run(
+            local,
+            ['commit', '-m', name],
+            env=incr_time())
+        return out[0].split()[1].strip(']'), copy.copy(time)
+
+    # make a commit that doesn’t create a package
+    touch('initial-commit')
+    git.run(local, ['add', '.'])
+    git.run(local, ['commit', '-m', 'Initial commit'])
 
     def packages(*names):
         return [commit(name) for name in names]
 
-    touch('init')
-    subprocess.check_call(['git', 'add', '.'])
-    inc_time()
-    subprocess.check_call(['git', 'commit', '-m', 'Initial commit'])
-    os.chdir(repo_dir)
-    subprocess.check_call(['git', 'clone', 'remote_repo', 'local_repo'])
-    os.chdir('local_repo')
-    user_name = 'Tarquin Tagger'
-    user_email = 'tarquin@tagger.com'
-    subprocess.check_output(['git', 'config', 'user.name', user_name])
-    subprocess.check_output(['git', 'config', 'user.email', user_email])
-
     def cleanup():
-        os.chdir(old_dir)
-        shutil.rmtree(repo_dir)
+        shutil.rmtree(root_dir)
 
     repo_dict = {
         'user_name': user_name,
@@ -77,9 +87,11 @@ def create_temp_repo():
         'commit': commit,
         'packages': packages,
         'touch': touch,
-        'dir': repo_dir,
+        'root': root_dir,
+        'local': local,
+        'remote': remote,
         'cleanup': cleanup,
-        'inc_time': inc_time,
+        'incr_time': incr_time,
     }
     return collections.namedtuple('repo', repo_dict.keys())(**repo_dict)
 

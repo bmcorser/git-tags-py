@@ -2,7 +2,6 @@
 import os
 import click
 import yaml
-from .. import utils as tags_utils
 
 STATUS_COLOUR = {' M': 'red', ' D': 'red', 'A ': 'green', '??': 'cyan'}
 
@@ -10,7 +9,7 @@ STATUS_COLOUR = {' M': 'red', ' D': 'red', 'A ': 'green', '??': 'cyan'}
 def print_status(status):
     'Print porcelain output colourfully'
     click.echo('  ##')
-    for line in tags_utils.filter_empty_lines(status):
+    for line in status:
         click.secho('  ' + line, fg=STATUS_COLOUR[line[:2]])
     click.echo()
 
