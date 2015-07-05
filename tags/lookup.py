@@ -46,17 +46,19 @@ class Lookup(object):
         if not ref:
             ref = self.repo.start_branch
         self.repo.checkout(ref)
-        _, (out, err) = self.repo.run(['ls-files'])
-        files = out[0]
+        _, (files, _) = self.repo.run(['ls-files'])
         ret_dict = {}
         for path in files:
+            if path == '.package':  # root package
+                ret_dict['/'] = self.repo.path_tree('/')
+                continue  # to check raise in case of nesting
             if path.endswith('.package'):
                 if any([path.startswith(seen) for seen in ret_dict.keys()]):
                     msg = "Nested packages not allowed: {0}"
                     raise Exception(msg.format(path))
                 rel_path = os.path.relpath(path, self.repo.root)
                 ret_dict[rel_path] = self.repo.path_tree(rel_path)
-        self.repo.checkout(self.repo.start_branch)
+        self.repo.checkout()
         return ret_dict
 
     def latest(self):

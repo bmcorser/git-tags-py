@@ -214,6 +214,8 @@ class Repo(object):
     def path_tree(self, path):
         'Get the object ID for the directory at `path`'
         root = self.cat_file('HEAD')[0].split()[1]
+        if path == '/':
+            return root
         try:
             return self._recurse_tree(root, path.split('/'))
         except NoTree:
