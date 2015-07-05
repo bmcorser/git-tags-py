@@ -135,7 +135,7 @@ class Repo(object):
     def fetch(self):
         'Fetch tags and commits'
         if not self.has_remote():
-            return
+            return 0, ([], [])
         self.run(['fetch', '--tags'])
 
     def create_tag(self, message, name):
@@ -163,7 +163,7 @@ class Repo(object):
     def push_ref(self, ref):
         'Push local tags to the remote'
         if not self.has_remote():
-            return
+            return True, None
         retcode, (out, err) = self.run(['push', 'origin', ref])
         if retcode:
             return None, err
