@@ -44,10 +44,10 @@ def create_temp_repo():
         'Increment the time that Git knows about'
         global time
         time += 100
-        return {
+        os.environ.update({
             'GIT_COMMITTER_DATE': "{0} +0000".format(time),
             'GIT_AUTHOR_DATE': "{0} +0000".format(time),
-        }
+        })
 
     def touch(path):
         'Make a change to a file that Git will see'
@@ -92,12 +92,13 @@ def create_temp_repo():
         'remote': remote,
         'cleanup': cleanup,
         'incr_time': incr_time,
+        'time': time,
     }
     return collections.namedtuple('repo', repo_dict.keys())(**repo_dict)
 
 
 @pytest.yield_fixture(scope='function')
-def function_repo(request):
+def fn_repo(request):
     repo = create_temp_repo()
     yield repo
     repo.cleanup()
