@@ -92,16 +92,4 @@ def release_cli(channel, release_notes, force, no_remote, repo):
         click.echo('You may be able to push the notes manually '
                    'with:\n\n'
                    "  git push origin {0}".format(notes_ref))
-    click.echo('')
-    click.echo('Release ', nl=False)
-    click.secho("#{0} ".format(release_inst.number), fg='green', nl=False)
-    click.echo('on channel', nl=False)
-    click.secho(" {0}".format(release_inst.channel), fg='cyan')
-    click.echo('')
-    click.echo('Included:')
-    for path, tree in release_inst.changed.items():
-        click.echo("  {0} ".format(path))
-    click.echo('')
-    click.echo('Tag: ', nl=False)
-    click.secho(release_inst.ref_name, fg='yellow')
-    click.echo('')
+    printing.print_releases([release_inst], yaml_out)

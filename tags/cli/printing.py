@@ -1,4 +1,5 @@
 'Functions for printing release data and Git output'
+import collections
 import os
 import click
 import yaml
@@ -19,12 +20,27 @@ def print_status(status):
 
 
 def print_releases(releases, yaml_out):
-    'Print release data to YAML (or soon to the CLI)'
+    'Print release data to YAML or colourfully to the CLI'
     if yaml_out:
-        click.echo(yaml.dump(releases, default_flow_style=False))
+        out_dict = collections.defaultdict(dict)
+        for release in releases:
+            out_dict[release.channel][release.number] = release.data
+        click.echo(yaml.dump(out_dict, default_flow_style=False))
         exit(os.EX_OK)
-    click.echo('User printing is not yet implemented, try with --yaml')
-    exit(os.EX_UNAVAILABLE)
+    for release in releases:
+        click.echo('Release ', nl=False)
+        click.secho("#{0} ".format(release.number), fg='green', nl=False)
+        click.echo('on channel', nl=False)
+        click.secho(" {0}".format(release.channel), fg='cyan')
+        click.echo('')
+        click.echo('Included:')
+        for path, _ in release.changed.items():
+            click.echo("  {0} ".format(path))
+        click.echo('')
+        click.echo('Tag: ', nl=False)
+        click.secho(release.ref_name, fg='yellow')
+        click.echo('')
+    exit(os.EX_OK)
 
 
 def error(message):
