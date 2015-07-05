@@ -17,9 +17,11 @@ def test_create_tag(repo):
 
 
 def test_create_tag_tagerror(repo):
-    'The TagError exception is raised in case of error when creating a tag'
+    '''
+    The CreateTagError exception is raised in case of error when creating a tag
+    '''
     repo.run(['tag', 'a/a'])
-    with pytest.raises(git.TagError) as exc:
+    with pytest.raises(git.CreateTagError) as exc:
         repo.create_tag('...', 'a')
         assert str(exc) == 'a'
 
