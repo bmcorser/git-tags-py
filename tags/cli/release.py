@@ -73,8 +73,8 @@ def release_cli(channel, release_notes, force, no_remote, yaml_out, repo):
     if not release_notes:
         prev_ref_name = getattr(release_inst.previous, 'ref_name', '')
         _, (diff, _) = repo.run(['diff', prev_ref_name, release_inst.ref_name])
-        release_notes = notes.capture_message('\n'.join(diff))
         import ipdb;ipdb.set_trace()
+        release_notes = notes.capture_message('\n'.join(diff))
         if not utils.filter_empty_lines(release_notes):
             click.echo('Release notes are required')
             click.echo('Bye.')
