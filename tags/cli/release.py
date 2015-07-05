@@ -76,6 +76,22 @@ def release_cli(channel, release_notes, force, no_remote, repo):
             exit(os.EX_NOINPUT)
     release_inst.create_tag()
     git.release_note(repo, release_inst, release_notes)
+    push_ok, stderr = repo.push_ref(release_inst.ref_name)
+    click.echo('')
+    if not push_ok:
+        click.echo("Error pushing release tags: {0}".format(stderr))
+        click.echo('This release will not be available until the tags are '
+                   'pushed. You may be able to push the tags manually '
+                   'with:\n\n'
+                   "  git push origin {0}".format(release_inst.ref_name))
+
+    notes_ref = git.REF_NS.format(kind='notes', name=git.NS)
+    push_ok, stderr = repo.push_ref(notes_ref)
+    if not push_ok:
+        click.echo("Error pushing release notes: {0}".format(stderr))
+        click.echo('You may be able to push the notes manually '
+                   'with:\n\n'
+                   "  git push origin {0}".format(notes_ref))
     click.echo('')
     click.echo('Release ', nl=False)
     click.secho("#{0} ".format(release_inst.number), fg='green', nl=False)
@@ -88,20 +104,4 @@ def release_cli(channel, release_notes, force, no_remote, repo):
     click.echo('')
     click.echo('Tag: ', nl=False)
     click.secho(release_inst.ref_name, fg='yellow')
-    push_ok, stderr = repo.push_ref(release_inst.ref_name)
-    if not push_ok:
-        click.echo("Error pushing release tags: {0}".format(stderr))
-        click.echo('This release will not be available until the tags are '
-                   'pushed. You may be able to push the tags manually '
-                   'with:\n\n'
-                   "  git push origin {0}".format(release_inst.ref_name))
-
-    notes_ref = git.REF_NS.format(kind='notes', name=git.NS)
-    push_ok, stderr = repo.push_ref(notes_ref)
-    if not push_ok:
-        click.echo("Error pushing release notes: {0}".format(stderr))
-        click.echo('This release will not be available until the tags are '
-                   'pushed. You may be able to push the tags manually '
-                   'with:\n\n'
-                   "  git push origin {0}".format(notes_ref))
     click.echo('')
