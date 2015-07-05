@@ -1,5 +1,4 @@
 # coding: utf-8
-from __future__ import unicode_literals
 
 import os
 
@@ -76,7 +75,6 @@ def release_cli(channel, release_notes, force, no_remote, yaml_out, repo):
             _, (diff, _) = repo.run(['diff', ref_range])
         else:
             diff = ''
-        import ipdb;ipdb.set_trace()
         release_notes = notes.capture_message('\n'.join(diff))
         if not utils.filter_empty_lines(release_notes):
             click.echo('Release notes are required')

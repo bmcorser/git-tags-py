@@ -14,7 +14,9 @@ def capture_message(diff):
     diff_marker = '# ------------------------ >8 ------------------------\n'
     diff_msg = '''\
 # Do not touch the line above.
-# Everything below will be removed.'''
+# Everything below will be removed.
+
+'''
     tempdir = tempfile.mkdtemp()
     release_diff = os.path.join(tempdir, "release.diff")
     with open(release_diff, 'w') as release_message:
@@ -22,5 +24,5 @@ def capture_message(diff):
     call([editor, release_diff])
     with open(release_diff, 'r') as release_message:
         content = release_message.readlines()
-    lines = content[:-content.index(diff_marker) - 2]
-    return ''.join(filter(lambda line: line.startswith('#'), lines))
+    lines = content[:content.index(diff_marker)]
+    return ''.join(filter(lambda line: not line.startswith('#'), lines))
