@@ -92,11 +92,14 @@ def run(directory, git_subcommand, **popen_kwargs):
         (returncode, (out, err))
 
     '''
-    proc = subprocess.Popen(['git'] + git_subcommand,
+    try:
+        proc = subprocess.Popen(['git'] + git_subcommand,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             cwd=directory,
                             **popen_kwargs)
+    except:
+        import ipdb;ipdb.set_trace()
     retcode = proc.wait()
     return retcode, map(utils.filter_empty_lines, proc.communicate())
 
