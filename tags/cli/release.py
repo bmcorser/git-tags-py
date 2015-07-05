@@ -39,7 +39,7 @@ def validate_channel(ctx, param, value):
 @click.option('--force', is_flag=True, default=False,
               help='Ignore dirty repo warnings')
 @click.option('--no-remote', is_flag=True, default=False,
-              help='DEBUG: Don’t publish tags now')
+              help='DEBUG: Don’t talk to or touch the remote.')
 @click.option('--repo', '-r', callback=main.validate_repo,
               help='Specify repository, defaults to the cwd')
 def release_cli(channel, release_notes, force, no_remote, repo):
@@ -57,7 +57,7 @@ def release_cli(channel, release_notes, force, no_remote, repo):
         tag release -c production
     '''
     if no_remote:
-        git.Repo.has_remote = lambda: False
+        git.Repo.has_remote = lambda *args: False
     status = repo.status()
     if bool(status) and not force:
         click.echo()

@@ -5,6 +5,7 @@ import click
 import yaml
 
 from .. import lookup
+from .. import git
 from . import main
 
 
@@ -13,10 +14,14 @@ from . import main
 @click.argument('number', required=False)
 @click.option('--yaml', '-y', 'yaml_out', is_flag=True,
               help='Output release data as YAML')
+@click.option('--no-remote', is_flag=True, default=False,
+              help='DEBUG: Don’t talk to or touch the remote.')
 @click.option('--repo', '-r', callback=main.validate_repo,
               help='Specify repository, defaults to the cwd')
-def lookup_cli(channel, number, yaml_out, repo):
+def lookup_cli(channel, number, yaml_out, no_remote, repo):
     'Get the latest release name(s)'
+    if no_remote:
+        git.Repo.has_remote = lambda *args: False
     lookup_inst = lookup.Lookup(repo, channel)
     if number:
         historic = lookup_inst.release(number)
@@ -40,7 +45,7 @@ def lookup_cli(channel, number, yaml_out, repo):
                 click.echo("  {0} ".format(path))
         click.echo('')
         click.echo('Notes:')
-        click.echo(repo.show_note(historic))
+        click.echo(repo.show_note(historic.ref_name)[historic.channel][historic.number])
         click.echo('')
     else:
         print(yaml.dump(historic.data))
