@@ -75,7 +75,7 @@ def release_cli(channel, release_notes, force, no_remote, repo):
             click.echo('Bye.')
             exit(os.EX_NOINPUT)
     release_inst.create_tag()
-    repo.append_note(release_notes, release_inst)
+    git.release_note(repo, release_inst, release_notes)
     click.echo('')
     click.echo('Release ', nl=False)
     click.secho("#{0} ".format(release_inst.number), fg='green', nl=False)

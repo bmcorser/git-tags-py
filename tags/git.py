@@ -1,5 +1,4 @@
 import string
-import logging
 import os
 import subprocess
 import yaml
@@ -19,9 +18,14 @@ class NoTree(Exception):
     pass
 
 
-class TagError(Exception):
+class CreateTagError(Exception):
+    'Could not create tag'
+    pass
+
+class CheckoutError(Exception):
     'Tell someone a tag exists'
     pass
+
 
 
 def release_tag(channel, number=None):
@@ -36,6 +40,23 @@ def release_tag(channel, number=None):
 def release_number(ref):
     'Extract the number for a release from a tag name'
     return int(ref.split('/')[-1])
+
+
+def release_note(repo, release, message):
+    'Add a note to the commit for the release passed'
+    repo.checkout(release.ref_name)
+    note_dict = {str(release.channel): {release.number: str(message)}}
+    cmd = ['notes', '--ref', NS, 'show']
+    retcode, (existing_note, err) = repo.run(cmd)
+    if retcode > 0 and 'No note found' in err[0]:
+        note = yaml.dump(note_dict, default_flow_style=False)
+    else:
+        existing_note = yaml.load('\n'.join(existing_note))
+        note_dict = utils.recursive_update(existing_note, note_dict)
+        note = yaml.dump(existing_note, default_flow_style=False)
+    cmd = ['notes', '--ref', NS, 'add', '-f', '-m', note]
+    retcode, (out, err) = repo.run(cmd)
+    repo.checkout()
 
 
 def is_repo(repo_dir):
@@ -88,7 +109,9 @@ class Repo(object):
         if retcode > 0:
             raise Exception('Not a repo?')
         self.root = out[0]
-        self.start_head = self.head_abbrev()
+        branch_cmd = ['symbolic-ref', '--quiet', 'HEAD']
+        retcode, (out, err) = run(directory, branch_cmd)
+        self.start_branch = out[0].lstrip('refs/heads/')
 
     def run(self, cmd):
         'Run a git command in this repo, just closes self.root'
@@ -122,9 +145,9 @@ class Repo(object):
         if retcode > 0:
             if 'unable to resolve ref' in err or 'still refs under' in err:
                 click.echo('Did you use a package name as an alias?')
-                raise TagError(name)
+                raise CreateTagError(name)
             else:
-                raise TagError(name)
+                raise CreateTagError(name)
 
     def delete_tag(self, name):
         '''
@@ -199,30 +222,15 @@ class Repo(object):
     def checkout(self, commitish=None):
         'Check out the commitish'
         if not commitish:
-            commitish = self.start_head
+            commitish = self.start_branch
         retcode, (out, err) = self.run(['checkout', commitish])
         if retcode > 0:
-            raise Exception('Error whilst checking out')
+            raise CheckoutError(commitish)
 
-    def show_note(self, release):
+    def show_note(self, ref_name):
         'Show notes for a release'
-        self.checkout(release.ref_name)
+        self.checkout(ref_name)
         cmd = ['notes', '--ref', NS, 'show']
-        retcode, (note, err) = self.run(cmd)
+        _, (note, _) = self.run(cmd)
         self.checkout()
-        note = yaml.load('\n'.join(note))
-        return note[release.channel][release.number]
-
-    def append_note(self, message, release):
-        'Add a note to the commit at HEAD'
-        note_dict = {str(release.channel): {release.number: str(message)}}
-        cmd = ['notes', '--ref', NS, 'show']
-        retcode, (existing_note, err) = self.run(cmd)
-        if retcode > 0 and 'No note found' in err[0]:
-            cmd = ['notes', '--ref', NS, 'add', '-m', yaml.dump(note_dict, default_flow_style=False)]
-            retcode, (out, err) = self.run(cmd)
-        else:
-            existing_note = yaml.load('\n'.join(existing_note))
-            existing_note.update(note_dict)
-            cmd = ['notes', '--ref', NS, 'add', '-f', '-m', yaml.dump(existing_note, default_flow_style=False)]
-            retcode, (out, err) = self.run(cmd)
+        return yaml.load('\n'.join(note))

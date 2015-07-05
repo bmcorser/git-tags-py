@@ -5,11 +5,17 @@ from . import git
 class HistoricRelease(object):
     'Convenience for looking at a release'
 
+    note = None
+
     def __init__(self, repo, channel, number):
         self.channel = channel
         self.number = number
-        self.ref_name = git.release_tag(channel, number)
-        self.data = repo.tag_dict(self.ref_name)
+        ref_name = git.release_tag(channel, number)
+        self.data = repo.tag_dict(ref_name)
+        note = repo.show_note(ref_name)
+        if note:
+            self.note = note[channel][number]
+        self.ref_name = ref_name
 
 
 class Lookup(object):
@@ -38,7 +44,7 @@ class Lookup(object):
     def packages(self, ref=None):
         'Get a list of packages defined at the passed commit'
         if not ref:
-            ref = self.repo.start_head
+            ref = self.repo.start_branch
         self.repo.checkout(ref)
         ret_dict = {}
         not_git = filter(lambda path: '.git' not in path,
@@ -51,7 +57,7 @@ class Lookup(object):
                         raise Exception(msg.format(path))
                     rel_path = os.path.relpath(path, self.repo.root)
                     ret_dict[rel_path] = self.repo.path_tree(rel_path)
-        self.repo.checkout(self.repo.start_head)
+        self.repo.checkout(self.repo.start_branch)
         return ret_dict
 
     def latest(self):

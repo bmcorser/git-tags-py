@@ -93,7 +93,7 @@ class Release(object):
         return self.diff['unchanged']
 
     def create_tag(self):
-        'Create the required tags for this release'
+        'Create the tag for this release'
         try:
             body_dict = {
                 'packages': {
@@ -101,9 +101,9 @@ class Release(object):
                     'unchanged': self.unchanged,
                 }
             }
-            self.repo.create_tag(yaml.dump(body_dict, default_flow_style=False),
-                           self.ref_name)
-        except git.TagError as err_tag:
+            body = yaml.dump(body_dict, default_flow_style=False)
+            self.repo.create_tag(body, self.ref_name)
+        except git.CreateTagError as err_tag:
             fmt_error = "ERROR: Could not create tag {0}".format(err_tag)
             click.secho(fmt_error, fg='red', bold=True)
             click.secho('Attempting to clean up ...', fg='yellow')

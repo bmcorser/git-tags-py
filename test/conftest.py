@@ -10,6 +10,7 @@ import shutil
 import uuid
 
 from tags import git
+from tags.release import Release
 
 
 @pytest.fixture(scope='session')
@@ -99,10 +100,18 @@ def create_temp_repo():
 
 @pytest.yield_fixture(scope='function')
 def fn_repo(request):
-    repo = create_temp_repo()
-    yield repo
-    repo.cleanup()
+    repo_fs = create_temp_repo()
+    yield repo_fs
+    repo_fs.cleanup()
+
 
 @pytest.fixture(scope='function')
 def repo(fn_repo):
     return git.Repo(fn_repo.local)
+
+
+@pytest.fixture(scope='function')
+def release(repo):
+    release_inst = Release(repo, 'test')
+    release_inst.create_tag()
+    return release_inst
