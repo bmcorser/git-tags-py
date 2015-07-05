@@ -165,7 +165,7 @@ class Repo(object):
         'Push local tags to the remote'
         if not self.has_remote():
             return
-        click.echo('Pushing ...')
+        click.echo("Pushing {0} ...".format(ref))
         retcode, (out, err) = self.run(['push', 'origin', ref])
         if retcode:
             return None, err
