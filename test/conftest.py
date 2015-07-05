@@ -52,7 +52,7 @@ def create_temp_repo():
     def touch(path):
         'Make a change to a file that Git will see'
         with open(os.path.join(local, path), 'w') as package_marker:
-            package_marker.write(repr(uuid.uuid4()))
+            package_marker.write(repr(uuid.uuid4().hex))
 
     def commit(name):
         'Touch the package marker file in the named directory and commit it'
@@ -102,3 +102,7 @@ def fn_repo(request):
     repo = create_temp_repo()
     yield repo
     repo.cleanup()
+
+@pytest.fixture(scope='function')
+def repo(fn_repo):
+    return git.Repo(fn_repo.local)

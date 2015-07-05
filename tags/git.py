@@ -131,7 +131,7 @@ class Repo(object):
         Try to delete the named tag, echo stderr if it fails for any other
         reason save for the tag not existing.
         '''
-        retcode, (out, err) = self.run(['git', 'tag', '-d', name])
+        retcode, (out, err) = self.run(['tag', '-d', name])
         if retcode > 0:
             if 'not found' in err:
                 pass
