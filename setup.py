@@ -2,9 +2,11 @@ from setuptools import setup
 
 VERSION = '0.0.3'
 DESC = 'CLI for managing release tags in a Git repository'
+URL = 'https://github.com/bmcorser/git-tags-py'
 setup(
     name='git-tags',
-    description=DESC,
+    url=URL,
+    description="{0}, see {1} for more information.".format(DESC, URL),
     author='bmcorser',
     author_email='bmcorser@gmail.com',
     short_description=DESC,
