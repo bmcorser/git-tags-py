@@ -22,7 +22,7 @@ class Release(object):
 
         historic = self.lookup.latest()
         if historic:
-            self.previous = historic.data['body']['packages']
+            self.previous = historic
             number = historic.number + 1
         else:
             number = 1
@@ -50,9 +50,10 @@ class Release(object):
             if not self.previous:
                 diff_['changed'] = self.packages
             else:
+                prev_pkgs = self.previous.data['body']['packages']
                 released_pkgs = {}
                 for name in ['changed', 'unchanged']:
-                    released_pkgs.update(self.previous[name])
+                    released_pkgs.update(prev_pkgs[name])
                 for name, tree in self.packages.items():
                     if name not in released_pkgs:
                         diff_['changed'][name] = tree

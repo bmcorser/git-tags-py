@@ -23,7 +23,7 @@ class CreateTagError(Exception):
     pass
 
 class CheckoutError(Exception):
-    'Tell someone a tag exists'
+    'Some sort of error checking out a commit'
     pass
 
 

@@ -8,12 +8,19 @@ import os
 from subprocess import call
 
 
-def capture_message():
+def capture_message(diff):
     'Use the default editor to capture a message'
     editor = os.environ.get('EDITOR', 'vim')
-    initial_message = ''
-    with tempfile.NamedTemporaryFile(suffix=".tmp") as message_file:
-        message_file.file.write(initial_message)
-        message_file.file.flush()
-        call([editor, message_file.name])
-        return message_file.file.read()
+    diff_marker = '# ------------------------ >8 ------------------------\n'
+    diff_msg = '''\
+# Do not touch the line above.
+# Everything below will be removed.'''
+    tempdir = tempfile.mkdtemp()
+    release_diff = os.path.join(tempdir, "release.diff")
+    with open(release_diff, 'w') as release_message:
+        release_message.write('\n\n' + diff_marker + diff_msg + diff)
+    call([editor, release_diff])
+    with open(release_diff, 'r') as release_message:
+        content = release_message.readlines()
+    lines = content[:-content.index(diff_marker) - 2]
+    return ''.join(filter(lambda line: line.startswith('#'), lines))
