@@ -92,14 +92,11 @@ def run(directory, git_subcommand, **popen_kwargs):
         (returncode, (out, err))
 
     '''
-    try:
-        proc = subprocess.Popen(['git'] + git_subcommand,
+    proc = subprocess.Popen(['git'] + git_subcommand,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             cwd=directory,
                             **popen_kwargs)
-    except:
-        import ipdb;ipdb.set_trace()
     retcode = proc.wait()
     return retcode, map(utils.filter_empty_lines, proc.communicate())
 
@@ -139,7 +136,6 @@ class Repo(object):
         'Fetch tags and commits'
         if not self.has_remote():
             return
-        click.echo('Fetching ...')
         self.run(['fetch', '--tags'])
 
     def create_tag(self, message, name):
@@ -168,7 +164,6 @@ class Repo(object):
         'Push local tags to the remote'
         if not self.has_remote():
             return
-        click.echo("Pushing {0} ...".format(ref))
         retcode, (out, err) = self.run(['push', 'origin', ref])
         if retcode:
             return None, err
