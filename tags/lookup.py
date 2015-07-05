@@ -46,7 +46,6 @@ class Lookup(object):
         if not ref:
             ref = self.repo.start_branch
         self.repo.checkout(ref)
-        print(self.repo.root)
         _, (files, _) = self.repo.run(['ls-files'])
         ret_dict = {}
         for path in files:
