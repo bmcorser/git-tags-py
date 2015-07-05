@@ -7,24 +7,6 @@ from . import git
 from . import lookup
 
 
-def is_pkg(repo_path, pkg):
-    'Return bool of whether passed directory name is a package'
-    for name in ('deploy', 'build'):
-        if not os.path.isfile(os.path.join(repo_path, pkg, name)):
-            return False
-    return True
-
-
-def validate_pkgs(pkgs):
-    'Validate all the packages we are releasing have a deploy script'
-    for pkg in pkgs:
-        if not is_pkg(pkg):
-            click.secho("ERROR: {0} is not a valid package".format(pkg),
-                        fg='red', bold=True)
-            click.echo('Bye.')
-            exit(os.EX_DATAERR)
-
-
 class Release(object):
     'Object to hold data for release validation and methods for tag creation'
 
