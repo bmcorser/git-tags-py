@@ -5,6 +5,8 @@ DESC = 'CLI for managing release tags in a Git repository'
 setup(
     name='git-tags',
     description=DESC,
+    author='bmcorser',
+    author_email='bmcorser@gmail.com',
     short_description=DESC,
     version=VERSION,
     packages=['tags', 'tags.cli'],
