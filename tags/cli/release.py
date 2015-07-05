@@ -72,11 +72,10 @@ def release_cli(channel, release_notes, force, no_remote, yaml_out, repo):
         exit(os.EX_DATAERR)
     if not release_notes:
         if release_inst.previous:
-            ref_range = "{0}..{1}".format(release_inst.previous.ref_name,
-                                          release_inst.ref_name)
+            ref_range = "{0}..HEAD".format(release_inst.previous.ref_name)
+            _, (diff, _) = repo.run(['diff', ref_range])
         else:
-            ref_range = release_inst.ref_name
-        _, (diff, _) = repo.run(['diff', ref_range])
+            diff = ''
         import ipdb;ipdb.set_trace()
         release_notes = notes.capture_message('\n'.join(diff))
         if not utils.filter_empty_lines(release_notes):
