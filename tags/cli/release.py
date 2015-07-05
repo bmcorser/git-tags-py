@@ -42,7 +42,9 @@ def validate_channel(ctx, param, value):
               help='DEBUG: Don’t talk to or touch the remote.')
 @click.option('--repo', '-r', callback=main.validate_repo,
               help='Specify repository, defaults to the cwd')
-def release_cli(channel, release_notes, force, no_remote, repo):
+@click.option('--yaml', '-y', 'yaml_out', is_flag=True,
+              help='Output release data as YAML')
+def release_cli(channel, release_notes, force, no_remote, yaml_out, repo):
     '''
     Cut a new release. Like a boss.
 
