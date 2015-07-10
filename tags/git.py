@@ -13,19 +13,24 @@ TAG_NS = '{ns}/{tag}'
 REF_NS = 'refs/{kind}/{name}'
 
 
-class NoTree(Exception):
+class RepoError(Exception):
+    'That is no repo'
+    pass
+
+
+class NoTree(RepoError):
     'No tree object found in the repo'
     pass
 
 
-class CreateTagError(Exception):
+class CreateTagError(RepoError):
     'Could not create tag'
     pass
 
-class CheckoutError(Exception):
+
+class CheckoutError(RepoError):
     'Some sort of error checking out a commit'
     pass
-
 
 
 def release_tag(channel, number=None):
@@ -59,16 +64,6 @@ def release_note(repo, release, message):
     repo.checkout()
 
 
-def is_repo(repo_dir):
-    '''
-    Return True if the passed irectory looks like a Git repository, otherwise
-    return False.
-    '''
-    if os.path.isdir(os.path.join(repo_dir, '.git')):
-        return True
-    return False
-
-
 def release_ref(channel, number=None):
     'Return either a full ref or channel glob'
     name = release_tag(channel, number)
@@ -84,7 +79,7 @@ def tagger_line_tokens(tokens):
     return (' '.join(tokens[1:e_ix]),) + tuple(tokens[e_ix:])
 
 
-def run(directory, git_subcommand, **popen_kwargs):
+def run(directory, git_subcommand, return_proc=False, **popen_kwargs):
     '''
     Start a process to run the passed git subcommand in the passed directory
     Returns the return code and formatted output in a tuple nest like this:
@@ -97,25 +92,39 @@ def run(directory, git_subcommand, **popen_kwargs):
                             stderr=subprocess.PIPE,
                             cwd=directory,
                             **popen_kwargs)
+    if return_proc:
+        return proc
     retcode = proc.wait()
     return retcode, map(utils.filter_empty_lines, proc.communicate())
+
+
+def checked_out(directory):
+    'What branch is checked out in the passed directory'
+    branch_cmd = ['symbolic-ref', '--quiet', 'HEAD']
+    retcode, (out, err) = run(directory, branch_cmd)
+    if retcode > 0:
+        raise CheckoutError()
+    return out[0].replace('refs/heads/', '')
+
+
+def repo_root(directory):
+    'Look for the root of the closest git repo'
+    root_cmd = ['rev-parse', '--show-toplevel']
+    retcode, (out, err) = run(directory, root_cmd)
+    if retcode > 0:
+        raise RepoError('Not a repo?')
+    return out[0]
 
 
 class Repo(object):
 
     def __init__(self, directory):
-        root_cmd = ['rev-parse', '--show-toplevel']
-        retcode, (out, err) = run(directory, root_cmd)
-        if retcode > 0:
-            raise Exception('Not a repo?')
-        self.root = out[0]
-        branch_cmd = ['symbolic-ref', '--quiet', 'HEAD']
-        retcode, (out, err) = run(directory, branch_cmd)
-        self.start_branch = out[0].lstrip('refs/heads/')
+        self.root = repo_root(directory)
+        self.start_branch = checked_out(directory)
 
-    def run(self, cmd):
+    def run(self, cmd, **popen_kwargs):
         'Run a git command in this repo, just closes self.root'
-        return run(self.root, cmd)
+        return run(self.root, cmd, **popen_kwargs)
 
     def has_remote(self):
         'Test if repo has a remote defined'

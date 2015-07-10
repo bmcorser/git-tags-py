@@ -1,5 +1,6 @@
 import os
 from . import git
+import subprocess
 
 
 class HistoricRelease(object):
@@ -46,9 +47,14 @@ class Lookup(object):
         if not ref:
             ref = self.repo.start_branch
         self.repo.checkout(ref)
-        _, (files, _) = self.repo.run(['ls-files'])
+        repo_files = self.repo.run(['ls-files'], return_proc=True)
+        grep_cmd = ['grep', '\.package']
+        grep_proc = subprocess.Popen(grep_cmd,
+                                     stdin=repo_files.stdout,
+                                     stdout=subprocess.PIPE)
+        package_markers, err = grep_proc.communicate()
         ret_dict = {}
-        for path in files:
+        for path in package_markers.split():
             if path == '.package':  # root package
                 ret_dict['/'] = self.repo.path_tree('/')
                 continue  # to check raise in case of nesting

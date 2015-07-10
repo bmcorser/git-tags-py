@@ -27,6 +27,8 @@ def validate_repo(ctx, param, value):
     'Validate the value passed to the --repo option looks like a Git repo'
     if value is None:
         value = os.getcwd()
-    if not git.is_repo(value):
+    try:
+        repo = git.Repo(value)
+    except git.RepoError:
         raise click.BadParameter('That\'s not a Git repository!')
-    return git.Repo(value)
+    return repo
