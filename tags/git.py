@@ -119,9 +119,6 @@ def repo_root(directory):
 
 class Repo(object):
 
-    _fetched = False
-    _fetched_notes = False
-
     def __init__(self, directory):
         self.root = repo_root(directory)
         self.start_branch = checked_out(directory)
@@ -147,20 +144,16 @@ class Repo(object):
 
     def fetch(self):
         'Fetch tags and commits'
-        if not self.has_remote() or self._fetched:
+        if not self.has_remote():
             return 0, ([], [])
-        retcode, _ = self.run(['fetch', '--tags'])
-        if not retcode > 0:
-            self._fetched = True
+        self.run(['fetch', '--tags'])
 
     def fetch_notes(self):
         'Fetch notes'
-        if not self.has_remote() or self._fetched_notes:
+        if not self.has_remote():
             return 0, ([], [])
         notes_ref = REF_NS.format(kind='notes', name='*')
-        retcode, _ = self.run(['fetch', 'origin', "{0}:{0}".format(notes_ref)])
-        if not retcode > 0:
-            self._fetched_notes = True
+        self.run(['fetch', 'origin', "{0}:{0}".format(notes_ref)])
 
     def create_tag(self, message, name):
         'Create a tag with the passed name and message (default user)'
