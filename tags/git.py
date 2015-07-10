@@ -49,6 +49,10 @@ def release_number(ref):
 
 def release_note(repo, release, message):
     'Add a note to the commit for the release passed'
+    notes_ref = REF_NS.format(kind='notes', name=NS)
+    notes_ret, _ = repo.run(['fetch', 'origin', "{0}:{0}".format(notes_ref)])
+    if notes_ret > 0:
+        raise RepoError('Could not fetch notes')
     repo.checkout(release.ref_name)
     note_dict = {str(release.channel): {release.number: str(message)}}
     cmd = ['notes', '--ref', NS, 'show']
