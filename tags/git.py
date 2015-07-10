@@ -49,10 +49,7 @@ def release_number(ref):
 
 def release_note(repo, release, message):
     'Add a note to the commit for the release passed'
-    notes_ref = REF_NS.format(kind='notes', name='*')
-    notes_ret, _ = repo.run(['fetch', 'origin', "{0}:{0}".format(notes_ref)])
-    if notes_ret > 0 and repo.has_remote:
-        raise RepoError('Could not fetch notes')
+    repo.fetch_notes()
     repo.checkout(release.ref_name)
     note_dict = {str(release.channel): {release.number: str(message)}}
     cmd = ['notes', '--ref', NS, 'show']
@@ -122,6 +119,9 @@ def repo_root(directory):
 
 class Repo(object):
 
+    _fetched = False
+    _fetched_notes = False
+
     def __init__(self, directory):
         self.root = repo_root(directory)
         self.start_branch = checked_out(directory)
@@ -147,9 +147,20 @@ class Repo(object):
 
     def fetch(self):
         'Fetch tags and commits'
-        if not self.has_remote():
+        if not self.has_remote() or self._fetched:
             return 0, ([], [])
-        self.run(['fetch', '--tags'])
+        retcode, _ = self.run(['fetch', '--tags'])
+        if not retcode > 0:
+            self._fetched = True
+
+    def fetch_notes(self):
+        'Fetch notes'
+        if not self.has_remote() or self._fetched_notes:
+            return 0, ([], [])
+        notes_ref = REF_NS.format(kind='notes', name='*')
+        retcode, _ = self.run(['fetch', 'origin', "{0}:{0}".format(notes_ref)])
+        if not retcode > 0:
+            self._fetched_notes = True
 
     def create_tag(self, message, name):
         'Create a tag with the passed name and message (default user)'

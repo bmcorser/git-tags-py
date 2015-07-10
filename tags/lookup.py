@@ -13,6 +13,7 @@ class HistoricRelease(object):
         self.number = number
         ref_name = git.release_tag(channel, number)
         self.data = repo.tag_dict(ref_name)
+        repo.fetch_notes()
         note = repo.show_note(ref_name)
         if note:
             self.note = note[channel][number]
