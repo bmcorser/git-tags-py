@@ -49,7 +49,7 @@ def release_number(ref):
 
 def release_note(repo, release, message):
     'Add a note to the commit for the release passed'
-    notes_ref = REF_NS.format(kind='notes', name=NS)
+    notes_ref = REF_NS.format(kind='notes', name='*')
     notes_ret, _ = repo.run(['fetch', 'origin', "{0}:{0}".format(notes_ref)])
     if notes_ret > 0 and repo.has_remote:
         raise RepoError('Could not fetch notes')
@@ -171,7 +171,8 @@ class Repo(object):
             if 'not found' in err:
                 pass
             else:
-                click.echo(err)
+                for line in err:
+                    click.echo(line)
 
     def push_ref(self, ref):
         'Push local tags to the remote'
