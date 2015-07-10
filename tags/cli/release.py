@@ -73,9 +73,10 @@ def release_cli(channel, release_notes, force, no_remote, yaml_out, repo):
         if release_inst.previous:
             ref_range = "{0}..HEAD".format(release_inst.previous.ref_name)
             _, (diff, _) = repo.run(['diff', ref_range])
+            _, (commits, _) = repo.run(['log', '--oneline', ref_range])
         else:
-            diff = ''
-        release_notes = notes.capture_message('\n'.join(diff))
+            diff = commits = ''
+        release_notes = notes.capture_message(commits, diff)
         if not utils.filter_empty_lines(release_notes):
             click.echo('Release notes are required')
             click.echo('Bye.')
