@@ -1,15 +1,10 @@
-'''
-Stolen from:
-http://stackoverflow.com/questions/6309587/call-up-an-editor-vim-from-a-python-script
-'''
-
 import tempfile
 import os
 from subprocess import call
 
 TEMPLATE = '''\
 
-{0}
+{0}\
 # Do not touch the line above.
 # Everything below will be removed.
 
@@ -28,7 +23,7 @@ Diff
 def capture_message(commits, diff):
     'Use the default editor to capture a message'
     editor = os.environ.get('EDITOR', 'vim')
-    diff_marker = '# ------------------------ >8 ------------------------'
+    diff_marker = '# ------------------------ >8 ------------------------\n'
     tempdir = tempfile.mkdtemp()
     release_diff = os.path.join(tempdir, "release.diff")
     with open(release_diff, 'w') as release_message:
