@@ -3,7 +3,7 @@
 Scripts for simulating the default local/remote set up, adding new commits by
 package. Used for creating disposable repositories to play with. Basically a
 shell script version of the
-[`function_repo`](https://github.com/bmcorser/git-tags-py/blob/master/test/conftest.py#L84)
+[`function_repo`](https://github.com/bmcorser/git-tags-py/blob/master/test/conftest.py#L24)
 fixture.
 
 ## Creating a playground
