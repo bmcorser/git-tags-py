@@ -1,6 +1,7 @@
 import os
-from . import git
 import subprocess
+import arrow
+from . import git
 
 
 class HistoricRelease(object):
@@ -13,6 +14,7 @@ class HistoricRelease(object):
         self.number = number
         ref_name = git.release_tag(channel, number)
         self.data = repo.tag_dict(ref_name)
+        self.time = arrow.get(self.data['time'], "X Z")
         repo.fetch_notes()
         note = repo.show_note(ref_name)
         if note:
@@ -42,6 +44,11 @@ class Lookup(object):
         return sorted([(git.release_number(ref), ref) for ref in refs],
                       reverse=True,
                       key=lambda T: T[0])
+
+    def listing(self):
+        'List all the releases on this channel'
+        return [HistoricRelease(self.repo, self.channel, number)
+                for number, _ in self._refs()]
 
     def packages(self, ref=None):
         'Get a list of packages defined at the passed commit'

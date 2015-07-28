@@ -215,8 +215,7 @@ class Repo(object):
             'tag': tag,
             'tagger_name': tagger,
             'tagger_email': email.strip('<>'),
-            'time': time,
-            'timezone': timezone,
+            'time': "{0} {1}".format(time, timezone),
             'body': body
         }
 

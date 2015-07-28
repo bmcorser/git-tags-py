@@ -19,8 +19,7 @@ def test_git_tag_dict(fn_repo):
         'tag': tag,
         'tagger_name': fn_repo.user_name,
         'tagger_email': fn_repo.user_email,
-        'time': str(time),
-        'timezone': '+0000',
+        'time': "{0} {1}".format(time, '+0000'),
         'body': {
             'packages': {
                 'changed': {
