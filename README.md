@@ -31,7 +31,7 @@ tag release [-c <channel>] [-m <message>]
 ## `lookup`
 
 ```
-tag lookup <channel> [--repo|-r] [--yaml|-y]
+tag lookup [--repo|-r] [--yaml|-y] [--list|-l] <channel> [number]
 ```
 
 ## From a Python script
