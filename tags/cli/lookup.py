@@ -15,6 +15,7 @@ def lookup_single(lookup_inst, number, yaml_out):
         historic = lookup_inst.release(number)
     else:
         historic = lookup_inst.latest()
+    notes = lookup_inst.repo.show_note(historic.ref_name)
     if not yaml_out:
         click.echo('')
         click.echo('Release ', nl=False)
@@ -34,7 +35,7 @@ def lookup_single(lookup_inst, number, yaml_out):
                 click.echo("  {0} ".format(path))
         click.echo('')
         click.echo('Notes:')
-        click.echo(repo.show_note(historic.ref_name)[historic.channel][historic.number])
+        click.echo(notes.get(historic.channel, {}).get(historic.number))
         click.echo('')
         click.echo('Tag:')
         click.secho(" {0}".format(historic.ref_name), fg='yellow')
