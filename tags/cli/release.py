@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import os
+from tempfile import TemporaryFile as mktemp
 
 import click
 
@@ -72,11 +73,26 @@ def release_cli(channel, release_notes, force, no_remote, yaml_out, repo):
     if not release_notes:
         if release_inst.previous:
             ref_range = "{0}..HEAD".format(release_inst.previous.ref_name)
-            _, (diff, _) = repo.run(['diff', ref_range])
+            diff_stat = mktemp()
+            diff_patch = mktemp()
+            repo.run(
+                ['diff', ref_range, '--stat'],
+                return_proc=True,
+                stdout=diff_stat
+            ).wait()
+            repo.run(
+                ['diff', ref_range],
+                return_proc=True,
+                stdout=diff_patch
+            ).wait()
+            diff_patch.seek(0)
+            diff_stat.seek(0)
+            diff_patch = diff_patch.read()
+            diff_stat = diff_stat.read()
             _, (commits, _) = repo.run(['log', '--oneline', ref_range])
         else:
-            diff = commits = ''
-        release_notes = notes.capture_message(commits, diff)
+            diff_patch = diff_stat = commits = ''
+        release_notes = notes.capture_message(commits, diff_stat, diff_patch)
         if not utils.filter_empty_lines(release_notes):
             click.echo('Release notes are required')
             click.echo('Bye.')

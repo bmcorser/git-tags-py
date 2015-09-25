@@ -17,10 +17,12 @@ Diff
 ----
 
 {2}
+
+{3}
 '''
 
 
-def capture_message(commits, diff):
+def capture_message(commits, diff_stat, diff_patch):
     'Use the default editor to capture a message'
     editor = os.environ.get('EDITOR', 'vim')
     diff_marker = '# ------------------------ >8 ------------------------\n'
@@ -28,9 +30,8 @@ def capture_message(commits, diff):
     release_diff = os.path.join(tempdir, "release.diff")
     with open(release_diff, 'w') as release_message:
         release_message.write(TEMPLATE.format(
-            diff_marker,
-            '\n'.join(commits),
-            '\n'.join(diff)))
+            diff_marker, '\n'.join(commits), diff_stat, diff_patch
+        ))
     call([editor, release_diff])
     with open(release_diff, 'r') as release_message:
         content = release_message.readlines()

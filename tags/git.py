@@ -88,11 +88,14 @@ def run(directory, git_subcommand, return_proc=False, **popen_kwargs):
         (returncode, (out, err))
 
     '''
+    default_kwargs = {
+        'stdout': subprocess.PIPE,
+        'stderr': subprocess.PIPE,
+        'cwd': directory,
+    }
+    default_kwargs.update(popen_kwargs)
     proc = subprocess.Popen(['git'] + git_subcommand,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            cwd=directory,
-                            **popen_kwargs)
+                            **default_kwargs)
     if return_proc:
         return proc
     retcode = proc.wait()
