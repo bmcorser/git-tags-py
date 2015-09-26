@@ -1,5 +1,4 @@
 # coding: utf-8
-from __future__ import unicode_literals
 
 import logging
 import os
@@ -30,5 +29,5 @@ def validate_repo(ctx, param, value):
     try:
         repo = git.Repo(value)
     except git.RepoError:
-        raise click.BadParameter('That\'s not a Git repository!')
+        raise click.BadParameter(u'That’s not a Git repository!')
     return repo
