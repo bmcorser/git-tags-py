@@ -10,15 +10,23 @@ class HistoricRelease(object):
     note = None
 
     def __init__(self, repo, channel, number):
+        if not isinstance(number, int):
+            msg = "Release number is not an integer: {0}"
+            raise Exception(msg.format(type(number)))
         self.channel = channel
         self.number = number
         ref_name = git.release_tag(channel, number)
         self.data = repo.tag_dict(ref_name)
+        if not self.data:
+            msg = "'{0}' does not refer to a known release"
+            raise Exception(msg.format(ref_name))
         self.time = arrow.get(self.data['time'], "X Z")
-        repo.fetch_notes()
-        note = repo.show_note(ref_name)
-        if note:
+        try:
+            note = repo.show_note(ref_name)
             self.note = note[channel][number]
+        except KeyError:
+            msg = 'No release notes for {0}'
+            raise Exception(msg.format(ref_name))
         self.ref_name = ref_name
 
 
@@ -84,4 +92,9 @@ class Lookup(object):
 
     def release(self, number):
         'Return the release for this channel at the number specified'
-        return HistoricRelease(self.repo, self.channel, number)
+        try:
+            return HistoricRelease(self.repo, self.channel, number)
+        except:  # TODO: Exception types
+            self.repo.fetch()
+            self.repo.fetch_notes()
+            return HistoricRelease(self.repo, self.channel, number)

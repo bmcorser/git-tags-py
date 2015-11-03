@@ -211,6 +211,8 @@ class Repo(object):
     def tag_dict(self, tag):
         'Return the contents of a tag as a dictionary'
         contents = self.cat_file(tag)
+        if not contents:
+            return None
         split_contents = contents[3].split(' ')
         tagger, email, time, timezone = tagger_line_tokens(split_contents)
         body = yaml.load('\n'.join(contents[4:]))
