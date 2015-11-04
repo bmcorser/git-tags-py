@@ -105,10 +105,14 @@ def run(directory, git_subcommand, return_proc=False, **popen_kwargs):
 def checked_out(directory):
     'What branch is checked out in the passed directory'
     branch_cmd = ['symbolic-ref', '--quiet', 'HEAD']
+    tag_cmd = ['describe', '--tags', '--exact-match']
     retcode, (out, err) = run(directory, branch_cmd)
-    if retcode > 0:
-        raise CheckoutError()
-    return out[0].replace('refs/heads/', '')
+    if retcode == 0:  # branch found
+        return out[0].replace('refs/heads/', '')
+    retcode, (out, err) = run(directory, tag_cmd)
+    if retcode == 0:  # tag found
+        return out[0]
+    raise CheckoutError('Not on branch or tagged commit')
 
 
 def repo_root(directory):
@@ -166,6 +170,7 @@ class Repo(object):
                 click.echo('Did you use a package name as an alias?')
                 raise CreateTagError(name)
             else:
+                click.echo('\n'.join(err))
                 raise CreateTagError(name)
 
     def delete_tag(self, name):

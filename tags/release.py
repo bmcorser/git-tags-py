@@ -90,6 +90,6 @@ class Release(object):
             fmt_error = "ERROR: Could not create tag {0}".format(err_tag)
             click.secho(fmt_error, fg='red', bold=True)
             click.secho('Attempting to clean up ...', fg='yellow')
-            git.delete_tag(self.ref_name)
+            self.repo.delete_tag(self.ref_name)
             click.echo('Bye.')
             exit(os.EX_CANTCREAT)
