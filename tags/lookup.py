@@ -39,7 +39,10 @@ class HistoricRelease(object):
         try:
             note = repo.show_note(ref_name)
             if not note:
-                raise LookupError()
+                repo.fetch_notes()
+                note = repo.show_note(ref_name)
+                if not note:
+                    raise LookupError()
             self.note = note[channel][number]
         except (KeyError, LookupError):
             msg = 'No release notes for {0}'
