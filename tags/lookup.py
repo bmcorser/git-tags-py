@@ -36,15 +36,11 @@ class HistoricRelease(object):
             msg = "'{0}' does not refer to a known release"
             raise NoTag(msg.format(ref_name))
         self.time = arrow.get(self.data['time'], "X Z")
+        repo.fetch_notes()
+        note = repo.show_note(ref_name)
         try:
-            note = repo.show_note(ref_name)
-            if not note:
-                repo.fetch_notes()
-                note = repo.show_note(ref_name)
-                if not note:
-                    raise LookupError()
             self.note = note[channel][number]
-        except (KeyError, LookupError):
+        except KeyError:
             msg = 'No release notes for {0}'
             raise NotesMissing(msg.format(ref_name))
         self.ref_name = ref_name
