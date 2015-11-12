@@ -35,5 +35,9 @@ def capture_message(commits, diff_stat, diff_patch):
     call([editor, release_diff])
     with open(release_diff, 'r') as release_message:
         content = release_message.readlines()
-    lines = content[:content.index(diff_marker)]
+    try:
+        lines = content[:content.index(diff_marker)]
+    except ValueError as exc:
+        if diff_marker.strip() in exc.message:
+            lines = content
     return ''.join(filter(lambda line: not line.startswith('#'), lines))
