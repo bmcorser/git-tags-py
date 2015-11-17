@@ -51,6 +51,13 @@ class HistoricRelease(object):
                 raise NotesMissing(msg.format(ref_name))
         self.ref_name = ref_name
 
+    def json(self):
+        'Render JSON'
+        ret = {}
+        for name in ['channel', 'number', 'ref_name', 'note', 'data']:
+            ret[name] = getattr(self, name)
+        return ret
+
 
 class Lookup(object):
     '''
