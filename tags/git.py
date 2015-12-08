@@ -204,7 +204,6 @@ class Repo(object):
         'Return the short refs of tags in the passed namespace'
         '%(refname:short): %(objectname:short)',
         fmt = '%(refname:short)'
-        self.fetch()
         retcode, (out, err) = self.run(['for-each-ref', '--format', fmt, glob])
         return out
 
