@@ -151,11 +151,13 @@ class Repo(object):
 
     def fetch(self):
         'Fetch tags and commits'
+        print('fetch')
         if not self.has_remote():
             return 0, ([], [])
         self.run(['fetch', '--tags'])
 
     def fetch_notes(self):
+        print('fetch notes')
         'Fetch notes'
         if not self.has_remote():
             return 0, ([], [])
@@ -261,3 +263,26 @@ class Repo(object):
         _, (note, _) = self.run(cmd)
         self.checkout()
         return yaml.load('\n'.join(note))
+
+    def packages(self, ref=None):
+        'Get a list of packages defined at the passed commit'
+        self.checkout(ref)
+        repo_files = self.run(['ls-files'], return_proc=True)
+        grep_cmd = ['grep', '\.package']
+        grep_proc = subprocess.Popen(grep_cmd,
+                                     stdin=repo_files.stdout,
+                                     stdout=subprocess.PIPE)
+        package_markers, err = grep_proc.communicate()
+        ret_dict = {}
+        for path in package_markers.split():
+            if path == '.package':  # root package
+                ret_dict['/'] = self.path_tree('/')
+                continue  # to check raise in case of nesting
+            if path.endswith('.package'):
+                if any([path.startswith(seen) for seen in ret_dict.keys()]):
+                    msg = "Nested packages not allowed: {0}"
+                    raise Exception(msg.format(path))
+                directory, filename = os.path.split(path)
+                ret_dict[directory] = self.path_tree(directory)
+        self.checkout()
+        return ret_dict

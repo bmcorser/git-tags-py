@@ -41,14 +41,18 @@ class HistoricRelease(object):
             repo.fetch_notes()
             note = repo.show_note(ref_name)
         try:
+            msg = 'No release notes for {0}'
             self.note = note[channel][number]
         except KeyError:
             repo.fetch_notes()
             try:
                 self.note = repo.show_note(ref_name)[channel][number]
             except KeyError:
-                msg = 'No release notes for {0}'
-                raise NotesMissing(msg.format(ref_name))
+                pass
+                'raise NotesMissing(msg.format(ref_name))'
+        except TypeError:
+            pass
+            'raise NotesMissing(msg.format(ref_name))'
         self.ref_name = ref_name
 
     def json(self):
@@ -86,31 +90,6 @@ class Lookup(object):
         'List all the releases on this channel'
         return [HistoricRelease(self.repo, self.channel, number)
                 for number, _ in self._refs()]
-
-    def packages(self, ref=None):
-        'Get a list of packages defined at the passed commit'
-        if not ref:
-            ref = self.repo.start_branch
-        self.repo.checkout(ref)
-        repo_files = self.repo.run(['ls-files'], return_proc=True)
-        grep_cmd = ['grep', '\.package']
-        grep_proc = subprocess.Popen(grep_cmd,
-                                     stdin=repo_files.stdout,
-                                     stdout=subprocess.PIPE)
-        package_markers, err = grep_proc.communicate()
-        ret_dict = {}
-        for path in package_markers.split():
-            if path == '.package':  # root package
-                ret_dict['/'] = self.repo.path_tree('/')
-                continue  # to check raise in case of nesting
-            if path.endswith('.package'):
-                if any([path.startswith(seen) for seen in ret_dict.keys()]):
-                    msg = "Nested packages not allowed: {0}"
-                    raise Exception(msg.format(path))
-                directory, filename = os.path.split(path)
-                ret_dict[directory] = self.repo.path_tree(directory)
-        self.repo.checkout()
-        return ret_dict
 
     def latest(self):
         refs = self._refs()
