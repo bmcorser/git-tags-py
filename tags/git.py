@@ -106,13 +106,17 @@ def checked_out(directory):
     'What branch is checked out in the passed directory'
     branch_cmd = ['symbolic-ref', '--quiet', 'HEAD']
     tag_cmd = ['describe', '--tags', '--exact-match']
+    commit_cmd = ['rev-parse', 'HEAD']
     retcode, (out, err) = run(directory, branch_cmd)
     if retcode == 0:  # branch found
         return out[0].replace('refs/heads/', '')
     retcode, (out, err) = run(directory, tag_cmd)
     if retcode == 0:  # tag found
         return out[0]
-    raise CheckoutError('Not on branch or tagged commit')
+    retcode, (out, err) = run(directory, commit_cmd)
+    if retcode == 0:  # not on a branch or tag
+        return out[0]
+    raise CheckoutError('Could not even rev-parse HEAD')
 
 
 def repo_root(directory):
@@ -128,7 +132,7 @@ class Repo(object):
 
     def __init__(self, directory):
         self.root = repo_root(directory)
-        self.start_branch = checked_out(directory)
+        self.start = checked_out(directory)
 
     def run(self, cmd, **popen_kwargs):
         'Run a git command in this repo, just closes self.root'
@@ -251,7 +255,7 @@ class Repo(object):
     def checkout(self, commitish=None):
         'Check out the commitish'
         if not commitish:
-            commitish = self.start_branch
+            commitish = self.start
         retcode, (out, err) = self.run(['checkout', commitish])
         if retcode > 0:
             raise CheckoutError(commitish)
