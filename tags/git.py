@@ -169,13 +169,11 @@ class Repo(object):
 
     def fetch(self):
         'Fetch tags and commits'
-        print('fetch')
         if not self.has_remote():
             return 0, ([], [])
         self.run(['fetch', '--tags'])
 
     def fetch_notes(self):
-        print('fetch notes')
         'Fetch notes'
         if not self.has_remote():
             return 0, ([], [])
