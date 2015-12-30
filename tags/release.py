@@ -36,7 +36,7 @@ class Release(object):
     def packages(self):
         'Get packages at HEAD'
         if not self._packages:
-            self._packages = self.lookup.packages()
+            self._packages = self.repo.packages()
         return self._packages
 
     @property

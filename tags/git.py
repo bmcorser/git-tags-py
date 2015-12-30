@@ -1,3 +1,4 @@
+import copy
 import string
 import os
 import subprocess
@@ -11,6 +12,14 @@ NS = 'release'
 TAG_FMT = '{channel}/{number}'
 TAG_NS = '{ns}/{tag}'
 REF_NS = 'refs/{kind}/{name}'
+
+
+def demote(user_uid, user_gid):
+    def result():
+        os.setgid(user_gid)
+        os.setuid(user_uid)
+    return result
+
 
 
 class RepoError(Exception):
@@ -102,18 +111,18 @@ def run(directory, git_subcommand, return_proc=False, **popen_kwargs):
     return retcode, map(utils.filter_empty_lines, proc.communicate())
 
 
-def checked_out(directory):
+def checked_out(directory, **popen_kwargs):
     'What branch is checked out in the passed directory'
     branch_cmd = ['symbolic-ref', '--quiet', 'HEAD']
     tag_cmd = ['describe', '--tags', '--exact-match']
     commit_cmd = ['rev-parse', 'HEAD']
-    retcode, (out, err) = run(directory, branch_cmd)
+    retcode, (out, err) = run(directory, branch_cmd, **popen_kwargs)
     if retcode == 0:  # branch found
         return out[0].replace('refs/heads/', '')
-    retcode, (out, err) = run(directory, tag_cmd)
+    retcode, (out, err) = run(directory, tag_cmd, **popen_kwargs)
     if retcode == 0:  # tag found
         return out[0]
-    retcode, (out, err) = run(directory, commit_cmd)
+    retcode, (out, err) = run(directory, commit_cmd, **popen_kwargs)
     if retcode == 0:  # not on a branch or tag
         return out[0]
     raise CheckoutError('Could not even rev-parse HEAD')
@@ -130,13 +139,18 @@ def repo_root(directory):
 
 class Repo(object):
 
-    def __init__(self, directory):
+    def __init__(self, directory, uid=None, gid=None):
+        self.popen_kwargs = {}
+        if uid and gid:
+            self.popen_kwargs['preexec_fn'] = demote(uid, gid)
         self.root = repo_root(directory)
-        self.start = checked_out(directory)
+        self.start = checked_out(directory, **self.popen_kwargs)
 
     def run(self, cmd, **popen_kwargs):
         'Run a git command in this repo, just closes self.root'
-        return run(self.root, cmd, **popen_kwargs)
+        kwargs = copy.deepcopy(self.popen_kwargs)
+        kwargs.update(popen_kwargs)
+        return run(self.root, cmd, **kwargs)
 
     def has_remote(self):
         'Test if repo has a remote defined'
