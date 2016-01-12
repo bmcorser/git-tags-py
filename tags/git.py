@@ -272,7 +272,7 @@ class Repo(object):
             commitish = self.start
         retcode, (out, err) = self.run(['checkout', commitish])
         if retcode > 0:
-            raise CheckoutError(commitish)
+            raise CheckoutError("({0}) {1}".format(commitish, '\n'.join(err)))
 
     def show_note(self, ref_name):
         'Show notes for a release'
