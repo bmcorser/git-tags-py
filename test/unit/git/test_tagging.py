@@ -43,7 +43,7 @@ def test_delete_tag_nonexistant(repo):
 
 
 def test_push_tags(repo):
-    'Deleting a nonexistant tag does not cause error state'
+    'Can push refs to origin and fetch them back'
     repo.run(['tag', 'a'])
     repo.run(['tag', 'b'])
     repo.create_tag('...', 'c')
@@ -52,7 +52,8 @@ def test_push_tags(repo):
     map(repo.delete_tag, 'abc')
     _, (out, _) = repo.run(['tag'])
     assert out == []
-    # the function below pulls tags from the remote
+    map(repo.delete_tag, 'abc')
+    repo.fetch()
     assert repo.refs_glob(TAGS_GLOB) == ['a', 'b', 'c']
 
 
