@@ -66,6 +66,7 @@ def release_cli(channel, release_notes, force, no_remote, yaml_out, repo):
         printing.print_status(status)
         printing.error(messages.release_repo_dirty)
         exit(os.EX_USAGE)
+    click.echo('Fetching, please wait ...')
     release_inst = release_cls.Release(repo, channel)
     if not release_inst.changed:
         printing.error('No packages changed, nothing to release')

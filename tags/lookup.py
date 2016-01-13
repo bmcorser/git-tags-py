@@ -48,11 +48,9 @@ class HistoricRelease(object):
             try:
                 self.note = repo.show_note(ref_name)[channel][number]
             except KeyError:
-                pass
-                'raise NotesMissing(msg.format(ref_name))'
+                raise NotesMissing(msg.format(ref_name))
         except TypeError:
-            pass
-            'raise NotesMissing(msg.format(ref_name))'
+            raise NotesMissing(msg.format(ref_name))
         self.ref_name = ref_name
 
     def json(self):
@@ -92,6 +90,8 @@ class Lookup(object):
                 for number, _ in self._refs()]
 
     def latest(self):
+        self.repo.fetch()
+        self.repo.fetch_notes()
         refs = self._refs()
         if not refs:
             return None
