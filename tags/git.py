@@ -268,7 +268,10 @@ class Repo(object):
         'Check out the commitish'
         if not commitish:
             commitish = self.start
-        retcode, (out, err) = self.run(['checkout', commitish])
+        cmd = ['checkout', commitish]
+        if os.environ.get('GIT_TAGS_FORCE_CHECKOUT'):
+            cmd.append('-qf')
+        retcode, (out, err) = self.run(cmd)
         if retcode > 0:
             raise CheckoutError("({0}) {1}".format(commitish, '\n'.join(err)))
 
