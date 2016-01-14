@@ -179,7 +179,7 @@ class Repo(object):
         retcode, (out, err) = self.run(['rev-parse', '--abbrev-ref', 'HEAD'])
         return out[0]
 
-    def fetch(self, refspec=None):
+    def fetch(self, refspec=None, *opts):
         'Fetch tags and commits, optionally to a refspec'
         if not self.has_remote():
             return 0, ([], [])
@@ -187,6 +187,7 @@ class Repo(object):
         cmd = ['fetch', 'origin', '--tags']
         if refspec:
             cmd.append(refspec)
+        cmd.extend(opts)
         retcode, (out, err) = self.run(cmd)
         if retcode > 0:
             raise FetchError('\n'.join(err))
@@ -196,7 +197,7 @@ class Repo(object):
         if not self.has_remote():
             return 0, ([], [])
         notes_ref = REF_NS.format(kind='notes', name='*')
-        self.fetch("{0}:{0}".format(notes_ref))
+        self.fetch("{0}:{0}".format(notes_ref), '-f')  # notes are annoying
 
     def create_tag(self, message, name):
         'Create a tag with the passed name and message (default user)'
