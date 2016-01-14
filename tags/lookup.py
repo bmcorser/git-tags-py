@@ -79,7 +79,11 @@ class Lookup(object):
         glob = git.release_ref(self.channel)
         refs = self.repo.refs_glob(glob)
         if not len(refs):
-            return None
+            # second chance
+            self.repo.fetch()
+            refs = self.repo.refs_glob(glob)
+            if not len(refs):
+                return None
         return sorted([(git.release_number(ref), ref) for ref in refs],
                       reverse=True,
                       key=lambda T: T[0])

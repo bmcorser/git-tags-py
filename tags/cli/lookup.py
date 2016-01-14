@@ -11,7 +11,7 @@ from . import main
 def lookup_single(lookup_inst, number, yaml_out):
     'Pretty print a single release, in full.'
     if number:
-        historic = lookup_inst.release(number)
+        historic = lookup_inst.release(int(number))
     else:
         historic = lookup_inst.latest()
     notes = lookup_inst.repo.show_note(historic.ref_name)

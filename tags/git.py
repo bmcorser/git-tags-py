@@ -42,6 +42,11 @@ class CheckoutError(RepoError):
     pass
 
 
+class FetchError(RepoError):
+    'Could not fetch for some reason'
+    pass
+
+
 def release_tag(channel, number=None):
     'Return either a release tag or channel glob'
     if number:
@@ -108,7 +113,14 @@ def run(directory, git_subcommand, return_proc=False, **popen_kwargs):
     if return_proc:
         return proc
     retcode = proc.wait()
-    return retcode, map(utils.filter_empty_lines, proc.communicate())
+    out, err = proc.communicate()
+    if os.environ.get('DEBUG_GIT_STATE'):
+        print('v'*80)
+        print(' '.join(git_subcommand))
+        print("out: {0}".format(out))
+        print("err: {0}".format(err))
+        print('^'*80)
+    return retcode, map(utils.filter_empty_lines, (out, err))
 
 
 def checked_out(directory, **popen_kwargs):
@@ -167,18 +179,24 @@ class Repo(object):
         retcode, (out, err) = self.run(['rev-parse', '--abbrev-ref', 'HEAD'])
         return out[0]
 
-    def fetch(self):
-        'Fetch tags and commits'
+    def fetch(self, refspec=None):
+        'Fetch tags and commits, optionally to a refspec'
         if not self.has_remote():
             return 0, ([], [])
-        self.run(['fetch', '--tags'])
+        # TODO: Find out what the remote is (not always origin)
+        cmd = ['fetch', 'origin', '--tags']
+        if refspec:
+            cmd.append(refspec)
+        retcode, (out, err) = self.run(cmd)
+        if retcode > 0:
+            raise FetchError('\n'.join(err))
 
     def fetch_notes(self):
         'Fetch notes'
         if not self.has_remote():
             return 0, ([], [])
         notes_ref = REF_NS.format(kind='notes', name='*')
-        self.run(['fetch', 'origin', "{0}:{0}".format(notes_ref)])
+        self.fetch("{0}:{0}".format(notes_ref))
 
     def create_tag(self, message, name):
         'Create a tag with the passed name and message (default user)'
@@ -280,6 +298,13 @@ class Repo(object):
         self.checkout(ref_name)
         cmd = ['notes', '--ref', NS, 'show']
         _, (note, _) = self.run(cmd)
+        if not note:
+            try:
+                self.fetch_notes()
+                _, (note, _) = self.run(cmd)
+            except FetchError as exc:
+                # don't leave the user somewhere different
+                self.checkout()
         self.checkout()
         return yaml.load('\n'.join(note))
 

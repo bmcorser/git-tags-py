@@ -21,6 +21,16 @@ def utils():
     return collections.namedtuple('utils', utils_dict.keys())(**utils_dict)
 
 
+def clone_from(root_dir, remote, local_name, user_name, user_email):
+    'Create a clone from the specified remote, and set up user'
+    local = os.path.join(root_dir, local_name)
+    os.mkdir(local)
+    git.run(root_dir, ['clone', remote, local])
+    git.run(local, ['config', 'user.name', user_name])
+    git.run(local, ['config', 'user.email', user_email])
+    return local
+
+
 def create_temp_repo():
     root_dir = tempfile.mkdtemp()
     # set up remote
@@ -28,14 +38,16 @@ def create_temp_repo():
     os.mkdir(remote)
     git.run(remote, ['init', '--bare'])
 
-    # set up local
-    local = os.path.join(root_dir, 'local_repo')
-    os.mkdir(local)
-    git.run(root_dir, ['clone', remote, local])
+    # default local user
     user_name = 'Tarquin Tagger'
     user_email = 'tarquin@tagger.com'
-    git.run(local, ['config', 'user.name', user_name])
-    git.run(local, ['config', 'user.email', user_email])
+
+    # tarquin's repo
+    local = clone_from(root_dir, remote, 'local_repo', user_name, user_email)
+
+    # tony's repo
+    local_other = clone_from(
+        root_dir, remote, 'local_repo_other', 'Tony Tagger', 'tony@tagger.com')
 
     # set up time-related things
     global time
@@ -65,16 +77,16 @@ def create_temp_repo():
                 raise
         touch(path)
         git.run(local, ['add', name])
-        retcode, (out, err) = git.run(
-            local,
-            ['commit', '-m', name],
-            env=incr_time())
+        _, (out, _) = git.run(local, ['commit', '-m', name], env=incr_time())
         return out[0].split()[1].strip(']'), copy.copy(time)
 
     # make a commit that doesn’t create a package
     touch('initial-commit')
     git.run(local, ['add', '.'])
     git.run(local, ['commit', '-m', 'Initial commit'])
+    git.run(local, ['push', 'origin', 'master'])
+
+    git.run(local_other, ['pull'])
 
     def packages(*names):
         return [commit(name) for name in names]
@@ -90,6 +102,7 @@ def create_temp_repo():
         'touch': touch,
         'root': root_dir,
         'local': local,
+        'local_other': local_other,
         'remote': remote,
         'cleanup': cleanup,
         'incr_time': incr_time,
