@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 DESC = 'CLI for managing release tags in a Git repository'
 URL = 'https://github.com/bmcorser/git-tags-py'
 setup(
