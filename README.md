@@ -85,6 +85,6 @@ Watch the magic unfold without typing a thing (depends the excellent
     cd test/playground
     ./init lib exec
     tag release -c development -m 'Release me!' -r local
-    ./touch pkg-a
+    ./touch lib
     tag release -c development -m 'Big things!' -r local
     tag lookup development -r local -y
